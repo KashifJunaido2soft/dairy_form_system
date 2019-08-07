@@ -53,14 +53,20 @@ function yyyymmdd() {
 
 
 // for mysql
-var connection = mysql.createConnection({
-  host: 'localhost',
-  user: 'root',
-  password: '',
-  database: 'dairy_milk_system'
-});
+// var connection = mysql.createConnection({
+//   host: 'localhost',
+//   user: 'root',
+//   password: '',
+//   database: 'dairy_milk_system'
+// });
 
 // for mysql
+var connection = mysql.createConnection({
+  host: 'database-1.cpl9upjkzzdr.us-east-1.rds.amazonaws.com',
+  user: 'admin',
+  password: 'o2soft1234',
+  database: 'database-1'
+});
 
 router.post('/updateUser', upload.single('avatar'), function (req, res) {
   // console.log(req.file);

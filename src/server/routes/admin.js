@@ -26,10 +26,10 @@ function yyyymmdd() {
 
 
 var connection = mysql.createConnection({
-  host: 'localhost',
-  user: 'root',
-  password: '',
-  database: 'dairy_milk_system'
+  host: 'database-1.cpl9upjkzzdr.us-east-1.rds.amazonaws.com',
+  user: 'admin',
+  password: 'o2soft1234',
+  database: 'database-1'
 });
 
 connection.connect(function (err) {
