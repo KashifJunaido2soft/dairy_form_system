@@ -58,6 +58,7 @@ connection.connect(function (err) {
 
 router.post('/login', function (req, res) {
   var deferred = Q.defer();
+  console.log(req.bodys)
   let querie = "SELECT * FROM admin where phone =" + req.body.phone + "";
   connection.query(querie, function (error, user) {
     if (error) throw error;
