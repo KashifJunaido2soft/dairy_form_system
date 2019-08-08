@@ -34,6 +34,7 @@ wss.on('connection', function (w, req) {
 
     wss.clients.forEach(function each(client) {
       // console.log(msg);
+      console.log(client);
       // var data = JSON.parse(msg);
       var data = '"' + msg + '"';
       // console.log(data);
