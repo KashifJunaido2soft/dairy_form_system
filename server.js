@@ -33,11 +33,11 @@ wss.on('connection', function (w, req) {
   wss.broadcast = function broadcast(msg, sender) {
 
     wss.clients.forEach(function each(client) {
-      // console.log(msg);
-      console.log(client);
+      //console.log(msg);
+      //console.log(client);
       // var data = JSON.parse(msg);
       var data = '"' + msg + '"';
-      // console.log(data);
+      console.log(data);
       // if (client !== sender) {
       client.send(data);
       // }
