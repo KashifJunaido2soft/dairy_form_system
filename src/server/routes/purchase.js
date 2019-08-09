@@ -50,6 +50,12 @@ const getInvoiceNo = (userId, callback) => {
   });
 }
 
+const getPurchaseReportAccountCount = (query, callback) => {
+  connection.query(query, function (error, res) {
+    return callback(res.length);
+  });
+}
+
 const insertPurchase = (req, invouceNo, price, callback) => {
 
   var parent_id;
@@ -97,18 +103,24 @@ const getConfigPrice = (req, callback) => {
 
 //For mysql
 router.post('/updatePurchase', function (req, res) {
-
   if (req.body.id !== "") {
     let querie = "UPDATE purchase set account_id='" + req.body.account_id.id + "',item_type='" + req.body.item_type + "',quantity='" + req.body.quantity + "',total_price='" + req.body.price * req.body.quantity + "',date='" + yyyymmdd(req.body.date) + "', updated_at='" + yyyymmdd() + "'    where id = " + req.body.id + "";
     connection.query(querie, function (error, upres) {
-      if (upres.affectedRows > 0) {
+      if (upres) {
+        if (upres.affectedRows > 0) {
+          var resp = ({
+            error: false,
+            message: 'success'
+          });
+          res.json(resp);
+        }
+      } else {
         var resp = ({
           error: false,
-          message: 'success'
+          message: 'not insert.'
         });
         res.json(resp);
       }
-
     })
 
   } else {
@@ -116,23 +128,7 @@ router.post('/updatePurchase', function (req, res) {
     getInvoiceNo(req.body.userId, function (invoiceNo) {
       if (req.body.price !== "" && req.body.price !== 0) {
         insertPurchase(req, invoiceNo, req.body.price, function (insertedData) {
-          if (insertedData.affectedRows > 0) {
-            var resp = ({
-              error: false,
-              message: 'success.'
-            });
-            res.json(resp);
-          } else {
-            var resp = ({
-              error: false,
-              message: 'not insert.'
-            });
-            res.json(resp);
-          }
-        });
-      } else {
-        getConfigPrice(req, function (price) {
-          insertPurchase(req, invoiceNo, price, function (insertedData) {
+          if (insertedData) {
             if (insertedData.affectedRows > 0) {
               var resp = ({
                 error: false,
@@ -146,6 +142,40 @@ router.post('/updatePurchase', function (req, res) {
               });
               res.json(resp);
             }
+          } else {
+            var resp = ({
+              error: false,
+              message: 'not insert.'
+            });
+            res.json(resp);
+          }
+
+        });
+      } else {
+        getConfigPrice(req, function (price) {
+          insertPurchase(req, invoiceNo, price, function (insertedData) {
+            if (insertedData) {
+              if (insertedData.affectedRows > 0) {
+                var resp = ({
+                  error: false,
+                  message: 'success.'
+                });
+                res.json(resp);
+              } else {
+                var resp = ({
+                  error: false,
+                  message: 'not insert.'
+                });
+                res.json(resp);
+              }
+            } else {
+              var resp = ({
+                error: false,
+                message: 'not insert.'
+              });
+              res.json(resp);
+            }
+
           })
         })
       }
@@ -163,13 +193,22 @@ router.get('/allPurchase/:userId/:parent_id', function (req, res) {
   }
   let querie = "SELECT purchase.*, account.name, account.phone  FROM purchase LEFT JOIN account ON purchase.account_id = account.id " + where + " Order By purchase.id DESC";
   connection.query(querie, function (error, purchase) {
-    if (purchase.length > 0) {
-      var resp = ({
-        error: false,
-        message: 'success.',
-        result: purchase
-      });
-      res.json(resp);
+    if (purchase) {
+      if (purchase.length > 0) {
+        var resp = ({
+          error: false,
+          message: 'success.',
+          result: purchase
+        });
+        res.json(resp);
+      } else {
+        var resp = ({
+          error: false,
+          message: 'not found.',
+          result: []
+        });
+        res.json(resp);
+      }
     } else {
       var resp = ({
         error: false,
@@ -178,20 +217,112 @@ router.get('/allPurchase/:userId/:parent_id', function (req, res) {
       });
       res.json(resp);
     }
+
   })
 
 })
+router.get('/getPurchaseReportAccount/:userId/:parent_id/:accountId/:startDate/:endDate/:groupBy/:filter/:sortDirection/:pageSize/:offset', function (req, res) {
 
+  var dateFormat = "DATE_FORMAT(purchase.date, '%Y-%m-%d')";
+  switch (req.params.groupBy) {
+    case 'days':
+      dateFormat = "DATE_FORMAT(purchase.date, '%Y-%m-%d')";
+      break;
+    case 'weeks':
+      dateFormat = "DATE_FORMAT(purchase.date, '%b %e')";
+      break;
+    case 'months':
+      dateFormat = "DATE_FORMAT(purchase.date, '%Y-%m')";
+      break;
+    case 'years':
+      dateFormat = "DATE_FORMAT(purchase.date, '%Y')";
+      break;
+
+  }
+  var where = "";
+  if (req.params.parent_id != 0) {
+    where = "where purchase.userId = " + req.params.userId;
+  } else {
+    where = "where purchase.parent_id = " + req.params.userId;
+  }
+  var where2 = " AND purchase.date >= '" + req.params.startDate + "' AND purchase.date <= '" + req.params.endDate + "'";
+  var select = " purchase.date, sum(purchase.quantity) as total_quantity, sum(purchase.total_price) as total_price, account.name, account.phone";
+  var limitOffset = " LIMIT " + req.params.pageSize + " OFFSET " + req.params.offset;
+  let querieCount = "SELECT " + select + " FROM purchase LEFT JOIN account ON purchase.account_id = account.id " + where + where2 + " Group By " + dateFormat + ", purchase.account_id";
+  let querieData = "SELECT " + select + " FROM purchase LEFT JOIN account ON purchase.account_id = account.id " + where + where2 + " Group By " + dateFormat + ", purchase.account_id Order By purchase.date " + req.params.sortDirection + limitOffset + "";
+  // console.log(querieData);
+  getPurchaseReportAccountCount(querieCount, function (count) {
+    if (count > 0) {
+      connection.query(querieData, function (error, purchase) {
+        if (purchase) {
+          if (purchase.length > 0) {
+            var resp = ({
+              error: false,
+              message: 'success.',
+              result: {
+                count: count,
+                data: purchase
+              }
+            });
+            res.json(resp);
+          } else {
+            var resp = ({
+              error: false,
+              message: 'data not found2.',
+              result: {
+                count: 0,
+                data: []
+              }
+            });
+            res.json(resp);
+          }
+        } else {
+          var resp = ({
+            error: false,
+            message: 'data not found2.',
+            result: {
+              count: 0,
+              data: []
+            }
+          });
+          res.json(resp);
+        }
+
+      })
+    } else {
+      var resp = ({
+        error: false,
+        message: 'data not found1.',
+        result: {
+          count: 0,
+          data: []
+        }
+      });
+      res.json(resp);
+    }
+
+  })
+
+
+})
 router.post('/deleteOneUser', function (req, res) {
 
   let querie = "DELETE FROM purchase  where id = " + req.body.id + "";
   connection.query(querie, function (error, upres) {
-    if (upres.affectedRows > 0) {
-      var resp = ({
-        error: false,
-        message: 'success'
-      });
-      res.json(resp);
+    if (upres) {
+      if (upres.affectedRows > 0) {
+        var resp = ({
+          error: false,
+          message: 'success'
+        });
+        res.json(resp);
+      } else {
+        var resp = ({
+          error: true,
+          message: 'not deleted'
+        });
+        res.json(resp);
+      }
     } else {
       var resp = ({
         error: true,
@@ -199,6 +330,7 @@ router.post('/deleteOneUser', function (req, res) {
       });
       res.json(resp);
     }
+
 
   })
 })
@@ -208,12 +340,20 @@ router.post('/deleteManyUser', function (req, res) {
   const ids = req.body;
   let querie = "DELETE FROM purchase  where id IN (" + ids + ")";
   connection.query(querie, function (error, upres) {
-    if (upres.affectedRows > 0) {
-      var resp = ({
-        error: false,
-        message: 'success'
-      });
-      res.json(resp);
+    if (upres) {
+      if (upres.affectedRows > 0) {
+        var resp = ({
+          error: false,
+          message: 'success'
+        });
+        res.json(resp);
+      } else {
+        var resp = ({
+          error: true,
+          message: 'not deleted'
+        });
+        res.json(resp);
+      }
     } else {
       var resp = ({
         error: true,
@@ -221,6 +361,7 @@ router.post('/deleteManyUser', function (req, res) {
       });
       res.json(resp);
     }
+
   })
 })
 
@@ -232,13 +373,22 @@ router.post('/addPurchaseApi', function (req, res) {
 
     let querie = "UPDATE purchase set account_id='" + req.body.account_id.id + "',item_type='" + req.body.item_type + "',quantity='" + req.body.quantity + "',total_price='" + req.body.price * req.body.quantity + "',date='" + yyyymmdd(req.body.date) + "', updated_at='" + yyyymmdd() + "'    where id = " + req.body.id + "";
     connection.query(querie, function (error, upres) {
-      if (upres.affectedRows > 0) {
+      if (upres) {
+        if (upres.affectedRows > 0) {
+          var resp = ({
+            error: false,
+            message: 'success'
+          });
+          res.json(resp);
+        }
+      } else {
         var resp = ({
-          error: false,
-          message: 'success'
+          error: true,
+          message: 'not update'
         });
         res.json(resp);
       }
+
 
     })
 
@@ -247,23 +397,7 @@ router.post('/addPurchaseApi', function (req, res) {
     getInvoiceNo(req.body.userId, function (invoiceNo) {
       if (req.body.price !== "" && req.body.price !== 0) {
         insertPurchase1(req, invoiceNo, req.body.price, req.body.account_id, function (insertedData) {
-          if (insertedData.affectedRows > 0) {
-            var resp = ({
-              error: false,
-              message: 'success.'
-            });
-            res.json(resp);
-          } else {
-            var resp = ({
-              error: false,
-              message: 'not insert.'
-            });
-            res.json(resp);
-          }
-        });
-      } else {
-        getConfigPrice(req, function (price) {
-          insertPurchase1(req, invoiceNo, price, req.body.account_id, function (insertedData) {
+          if (insertedData) {
             if (insertedData.affectedRows > 0) {
               var resp = ({
                 error: false,
@@ -277,6 +411,40 @@ router.post('/addPurchaseApi', function (req, res) {
               });
               res.json(resp);
             }
+          } else {
+            var resp = ({
+              error: false,
+              message: 'not insert.'
+            });
+            res.json(resp);
+          }
+
+        });
+      } else {
+        getConfigPrice(req, function (price) {
+          insertPurchase1(req, invoiceNo, price, req.body.account_id, function (insertedData) {
+            if (insertedData) {
+              if (insertedData.affectedRows > 0) {
+                var resp = ({
+                  error: false,
+                  message: 'success.'
+                });
+                res.json(resp);
+              } else {
+                var resp = ({
+                  error: false,
+                  message: 'not insert.'
+                });
+                res.json(resp);
+              }
+            } else {
+              var resp = ({
+                error: false,
+                message: 'not insert.'
+              });
+              res.json(resp);
+            }
+
           })
         })
       }
@@ -285,194 +453,5 @@ router.post('/addPurchaseApi', function (req, res) {
   }
   //-------------------------------------------
 });
-//For mongoose
-// router.post('/deleteManyUser', function (req, res) {
-
-//   const ids = req.body;
-//   Purchase.deleteMany({ _id: { $in: ids } }, function (err, purchaseResp) {
-//     if (purchaseResp) {
-//       var resp = ({
-//         error: false,
-//         message: 'success.',
-//       });
-//       res.json(resp);
-//     } else {
-//       var resp = ({
-//         error: true,
-//         message: 'not deleted.',
-//       });
-//       res.json(resp);
-//     }
-//   });
-
-// })
-
-// router.post('/deleteOneUser', function (req, res) {
-
-//   Purchase.deleteOne({ _id: req.body._id }, function (err, purchaseResp) {
-//     if (purchaseResp) {
-//       var resp = ({
-//         error: false,
-//         message: 'success.',
-//       });
-//       res.json(resp);
-//     } else {
-//       var resp = ({
-//         error: true,
-//         message: 'not deleted.',
-//       });
-//       res.json(resp);
-//     }
-//   });
-// })
-
-// router.get('/allPurchase/:userId/:parent_id', function (req, res) {
-//   var query = {};
-//   if (req.params.parent_id !== '0') {
-//     query = { userId: req.params.userId };
-//   }
-//   // Admin.find(query, null, {sort:{_id:-1}, skip:0, limit:20}, function (err, users) {
-//   Purchase.find(query, null, { sort: { _id: -1 } }, function (err, purchases) {
-//     if (purchases) {
-//       res.json(purchases);
-//     }
-//   })
-// })
-
-// router.get('/getInvoiceNo/:userId/:parent_id', function (req, res) {
-
-//   query = { userId: req.params.userId };
-//   select = { invoice_no: 1, _id: 0 };
-//   // Admin.find(query, null, {sort:{_id:-1}, skip:0, limit:20}, function (err, users) {
-//   Purchase.findOne(query, select, { sort: { _id: -1 } }, function (err, invoiceNo) {
-//     if (invoiceNo) {
-//       res.json(parseInt(invoiceNo.invoice_no) + 1);
-//     } else {
-//       res.json(1001);
-//     }
-//   })
-// })
-// router.post('/updatePurchase', function (req, res) {
-
-
-//   var newPurchase = new Purchase();
-//   // update Purchase
-//   if (req.body._id !== "") {
-
-//     var where = { _id: req.body._id };
-//     var query = { $set: { account_id: req.body.account_id, item_type: req.body.item_type, price: req.body.price, quantity: req.body.quantity, total_price: req.body.price * req.body.quantity, date: req.body.date } }
-//     Purchase.updateOne(where, query, function (err, updateResponse) {
-//       var resp = ({
-//         error: false,
-//         message: 'success',
-//         result: updateResponse
-//       });
-//       res.json(resp);
-//     })
-
-
-//   } else { // insert Purchase
-
-//     if (req.body.parent_id !== '0') {
-//       query1 = { parent_id: req.body.parent_id };
-//     } else {
-//       query1 = { parent_id: req.body.userId };
-//     }
-
-//     adminConfig.findOne(query1, function (err, resConfig) {
-
-//       if (resConfig) {
-//         var purchasePrice = 0;
-//         if (req.body.price !== "" && req.body.price !== "0") {
-//           purchasePrice = req.body.price;
-//         } else {
-//           purchasePrice = resConfig.price;
-//         }
-//         newPurchase.parent_id = req.body.parent_id;
-//         newPurchase.userId = req.body.userId;
-//         newPurchase.account_id = req.body.account_id;
-//         newPurchase.item_type = req.body.item_type;
-//         newPurchase.price = purchasePrice;
-//         newPurchase.quantity = req.body.quantity;
-//         newPurchase.location = req.body.location;
-//         newPurchase.total_price = purchasePrice * req.body.quantity;
-//         newPurchase.invoice_no = req.body.invoice_no;
-//         newPurchase.date = req.body.date;
-//         newPurchase.created_at = dateTime;
-//         newPurchase.save(function (err, insertedRes) {
-//           if (insertedRes) {
-//             res.json(insertedRes);
-//           }
-//         })
-//       }
-//     })
-
-//   }
-//   //-------------------------------------------
-// });
-
-// router.post('/addPurchaseApi', function (req, res) {
-
-
-//   console.log(req.body);
-//   var newPurchase = new Purchase();
-//   // update Purchase
-//   if (req.body._id !== "") {
-
-//     var where = { _id: req.body._id };
-//     var query = { $set: { account_id: req.body.account_id, item_type: req.body.item_type, price: req.body.price, quantity: req.body.quantity, total_price: req.body.price * req.body.quantity, date: req.body.date } }
-//     Purchase.updateOne(where, query, function (err, updateResponse) {
-//       var resp = ({
-//         error: false,
-//         message: 'success',
-//         result: updateResponse
-//       });
-//       res.json(resp);
-//     })
-
-
-//   } else {
-//     // insert Purchase
-//     query = { parent_id: req.body.parent_id };
-//     select = { invoice_no: 1, _id: 0 };
-//     // Admin.find(query, null, {sort:{_id:-1}, skip:0, limit:20}, function (err, users) {
-//     Purchase.findOne(query, select, { sort: { _id: -1 } }, function (err, invoiceNo) {
-//       var newInvoiceNo = '';
-//       if (invoiceNo) {
-//         newInvoiceNo = parseInt(invoiceNo.invoice_no) + 1;
-//       } else {
-//         newInvoiceNo = 1001;
-//       }
-//       newPurchase.parent_id = req.body.parent_id;
-//       newPurchase.account_id = req.body.account_id;
-//       newPurchase.item_type = req.body.item_type;
-//       newPurchase.price = req.body.price;
-//       newPurchase.userId = req.body.userId;
-//       newPurchase.quantity = req.body.quantity;
-//       newPurchase.total_price = req.body.price * req.body.quantity;
-//       newPurchase.invoice_no = newInvoiceNo;
-//       newPurchase.location = req.body.location;
-//       newPurchase.date = req.body.date;
-//       newPurchase.created_at = dateTime;
-//       newPurchase.save(function (err, insertedRes) {
-//         if (insertedRes) {
-//           var resp = ({
-//             error: false,
-//             message: 'success',
-//             result: insertedRes
-//           });
-//         } else {
-//           var resp = ({
-//             error: true,
-//             message: 'not inserted'
-//           });
-//         }
-//         res.json(resp);
-
-//       })
-//     })
-//   }
-//   //-------------------------------------------
-// });
 
 module.exports = router;

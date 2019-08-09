@@ -9,13 +9,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 var Q = require('q');
 var _ = require('lodash');
-// var jwt = require('jsonwebtoken');
 
-// console.log(`${mongoose.version}`);
-
-// const dateTime = new Date().toLocaleString('en-US', {
-//   timeZone: 'Asia/Karachi'
-// });
 function yyyymmdd() {
   var now = new Date();
   var y = now.getFullYear();
@@ -25,6 +19,7 @@ function yyyymmdd() {
 }
 
 
+// for mysql
 var connection = mysql.createConnection({
   host: 'database-1.cpl9upjkzzdr.us-east-1.rds.amazonaws.com',
   port : '3306',
@@ -77,58 +72,5 @@ router.post('/register', function (req, res) {
   });
 });
 
-// for mongoose
-// router.post('/registerNode', function (req, res) {
-//   var newAdmin = new Admin();
-//   var adminConfig = new AdminConfig();
-//   //-----------------------------------------------------
-//   Admin.findOne({ phone: req.body.phone }, function (err, user) {
-//     if (err) deferred.reject(err.name + ': ' + err.message);
-
-//     if (user) {
-//       // email already exist
-//       var resp = ({
-//         error: true,
-//         message: 'Phone Already Exist.'
-//       });
-//       res.json(resp);
-//     } else {
-//       newAdmin.parent_id = req.body.parent_id;
-//       newAdmin.name = req.body.name;
-//       newAdmin.phone = req.body.phone;
-//       newAdmin.password = bcrypt.hashSync(req.body.password, 10);
-//       newAdmin.active = true;
-//       newAdmin.location = 'admin';
-//       newAdmin.avatar = 'assets/images/avatars/profile.jpg';
-//       newAdmin.price = '';
-//       newAdmin.created_at = dateTime;
-//       newAdmin.save(function (err, insertedUser) {
-//         if (insertedUser) {
-//           adminConfig.parent_id = insertedUser._id;
-//           adminConfig.lang = 'en';
-//           adminConfig.price = '0';
-//           adminConfig.save(function (err, adminConfigResponse) {
-//             var resp = ({
-//               error: false,
-//               message: 'success',
-//               result: {
-//                 admin: insertedUser,
-//                 conifg: adminConfigResponse
-//               }
-//             });
-//             res.json(resp);
-//           })
-//         } else {
-//           var resp = ({
-//             error: true,
-//             message: 'Insert Error.'
-//           });
-//           res.json(resp);
-//         }
-//       })
-//     }
-//   });
-//   //-------------------------------------------
-// });
 
 module.exports = router;
