@@ -41,20 +41,33 @@ function yyyymmdd() {
   return y + '-' + (m < 10 ? '0' : '') + m + '-' + (d < 10 ? '0' : '') + d;
 }
 
+// for monogo db
+// const db = "mongodb://localhost:27017/admin_panel";
+// mongoose.promise = global.promise;
+// mongoose.connect(db, { useNewUrlParser: true }, function (err) {
+//   if (err) {
+//     console.error("Error: !" + err);
+//   }
+// });
+
+
 
 // for mysql
 var connection = mysql.createConnection({
-  host: 'database-1.cpl9upjkzzdr.us-east-1.rds.amazonaws.com',
-  port : '3306',
-  user: 'admin',
-  password: 'o2soft1234',
-  database: 'dmsdb'
+  host: 'localhost',
+  user: 'root',
+  password: '',
+  database: 'dairy_milk_system'
 });
 
 // for mysql
 
 router.post('/updateUser', upload.single('avatar'), function (req, res) {
   // update user
+  var price = 0;
+  if (req.body.price !== "") {
+    price = req.body.price
+  }
   if (req.body.id !== "") {
     var img = req.body.avatar;
 
@@ -87,12 +100,24 @@ router.post('/updateUser', upload.single('avatar'), function (req, res) {
               });
             }
           }
-          let querie = "UPDATE admin set name='" + req.body.name + "',price='" + req.body.price + "',avatar='" + img + "', location='" + req.body.location + "',phone='" + req.body.phone + "', notes='" + req.body.notes + "',address='" + req.body.address + "',active='" + req.body.active + "'    where id = " + req.body.id + "";
+          let querie = "UPDATE admin set name='" + req.body.name + "',price='" + price + "',avatar='" + img + "', location='" + req.body.location + "',phone='" + req.body.phone + "', notes='" + req.body.notes + "',address='" + req.body.address + "',active='" + req.body.active + "'    where id = " + req.body.id + "";
           connection.query(querie, function (error, upres) {
             if (upres.affectedRows > 0) {
               var resp = ({
                 error: false,
-                message: 'success'
+                message: 'success',
+                data: {
+                  'avatar': img,
+                  'id': req.body.id,
+                  'parent_id': req.body.parent_id,
+                  'location': req.body.location,
+                  'name': req.body.name,
+                  'active': req.body.active,
+                  'phone': req.body.phone,
+                  'price': price,
+                  'address': req.body.address,
+                  'notes': req.body.notes
+                }
               });
               res.json(resp);
             }
@@ -127,12 +152,24 @@ router.post('/updateUser', upload.single('avatar'), function (req, res) {
             });
           }
         }
-        let querie = "UPDATE admin set name='" + req.body.name + "',avatar='" + img + "', location='" + req.body.location + "',phone='" + req.body.phone + "', notes='" + req.body.notes + "',address='" + req.body.address + "',active='" + req.body.active + "'    where id = " + req.body.id + "";
+        let querie = "UPDATE admin set name='" + req.body.name + "',price='" + price + "',avatar='" + img + "', location='" + req.body.location + "',phone='" + req.body.phone + "', notes='" + req.body.notes + "',address='" + req.body.address + "',active='" + req.body.active + "'    where id = " + req.body.id + "";
         connection.query(querie, function (error, upres) {
           if (upres.affectedRows > 0) {
             var resp = ({
               error: false,
-              message: 'success'
+              message: 'success',
+              data: {
+                'avatar': img,
+                'id': req.body.id,
+                'parent_id': req.body.parent_id,
+                'location': req.body.location,
+                'name': req.body.name,
+                'active': req.body.active,
+                'phone': req.body.phone,
+                'price': price,
+                'address': req.body.address,
+                'notes': req.body.notes
+              }
             });
             res.json(resp);
           }
@@ -342,5 +379,295 @@ router.post('/updatePrice', function (req, res) {
 
   })
 });
+
+
+router.get('/allActiveUsers/:userId', function (req, res) {
+  var where = "where parent_id = " + req.params.userId + " and active='true'";
+  let querie = "SELECT * FROM admin " + where + " Order By id DESC";
+  // console.log(querie);
+  connection.query(querie, function (error, users) {
+    if (users.length > 0) {
+      var resp = ({
+        error: false,
+        message: 'success.',
+        result: users
+      });
+      res.json(resp);
+    } else {
+      var resp = ({
+        error: false,
+        message: 'not found.',
+        result: []
+      });
+      res.json(resp);
+    }
+  })
+
+})
+
+// for mongoose
+// router.post('/updateUserDataStarred', function (req, res) {
+
+//   var is_starred = false;
+//   if (req.body.starred === true) {
+//     is_starred = false;
+//   } else {
+//     is_starred = true;
+//   }
+//   Admin.updateOne({ _id: req.body._id }, { starred: is_starred }, function (err, updateResponse) {
+//     if (updateResponse) {
+//       var resp = ({
+//         error: false,
+//         message: 'success'
+//       });
+
+//       res.json(resp);
+//     }
+
+//   })
+// });
+// router.post('/updateUserDataActive', function (req, res) {
+
+//   var is_active = false;
+//   if (req.body.active === true) {
+//     is_active = false;
+//   } else {
+//     is_active = true;
+//   }
+//   Admin.updateOne({ _id: req.body._id }, { active: is_active }, function (err, updateResponse) {
+//     if (updateResponse) {
+//       var resp = ({
+//         error: false,
+//         message: 'success'
+//       });
+
+//       res.json(resp);
+//     }
+
+//   })
+// })
+// router.post('/deleteManyUser', function (req, res) {
+
+//   const ids = req.body;
+
+//   AdminConfig.deleteMany({ parent_id: { $in: ids } }, function (err, adminConfig) {
+
+//     if (adminConfig) {
+//       Admin.deleteMany({ _id: { $in: ids } }, function (err, Admin) {
+//         if (Admin) {
+//           var resp = ({
+//             error: false,
+//             message: 'success.',
+//           });
+//           res.json(resp);
+//         } else {
+//           var resp = ({
+//             error: true,
+//             message: 'not deleted.',
+//           });
+//           res.json(resp);
+//         }
+//       });
+//     }
+//   });
+
+
+// })
+// router.post('/deleteOneUser', function (req, res) {
+
+//   AdminConfig.deleteOne({ parent_id: req.body._id }, function (err, adminConfig) {
+//     if (adminConfig) {
+//       Admin.deleteOne({ _id: req.body._id }, function (err, Admin) {
+//         if (Admin) {
+//           var resp = ({
+//             error: false,
+//             message: 'success.',
+//           });
+//           res.json(resp);
+//         } else {
+//           var resp = ({
+//             error: true,
+//             message: 'not deleted.',
+//           });
+//           res.json(resp);
+//         }
+//       });
+//     }
+//   });
+
+
+// })
+// router.get('/getOneUser/:Id', function (req, res) {
+//   var query = { _id: req.params.Id };
+//   // Admin.find(query, null, {sort:{_id:-1}, skip:0, limit:20}, function (err, users) {
+//   Admin.findOne(query, function (err, users) {
+//     if (users) {
+//       // email already exist
+//       var resp = ({
+//         error: false,
+//         message: 'success.',
+//         result: users
+//       });
+//       res.json(resp);
+//     } else {
+//       var resp = ({
+//         error: false,
+//         message: 'not found.'
+//       });
+//       res.json(resp);
+//     }
+//   })
+// })
+// router.get('/allUsers/:parent_id', function (req, res) {
+
+//   var query = { parent_id: req.params.parent_id };
+//   // Admin.find(query, null, {sort:{_id:-1}, skip:0, limit:20}, function (err, users) {
+//   Admin.find(query, null, { sort: { _id: -1 } }, function (err, users) {
+//     if (users) {
+//       // email already exist
+//       var resp = ({
+//         error: false,
+//         message: 'success.',
+//         result: users
+//       });
+//       res.json(resp);
+//     } else {
+//       var resp = ({
+//         error: false,
+//         message: 'not found.'
+//       });
+//       res.json(resp);
+//     }
+//   })
+// })
+// Update Password 
+// router.post('/updateUserPassword', function (req, res) {
+//   var where = { _id: req.body._id };
+//   var query = { $set: { password: bcrypt.hashSync(req.body.password, 10) } }
+//   Admin.updateOne(where, query, function (err, updateResponse) {
+//     var resp = ({
+//       error: false,
+//       message: 'updated ',
+//       result: updateResponse
+//     });
+//     res.json(resp);
+//   })
+// })
+
+// router.post('/updatePrice', function (req, res) {
+//   var where = { parent_id: req.body._id };
+//   var query = { price: req.body.price }
+//   AdminConfig.updateOne(where, query, function (err, updateResponse) {
+//     if (updateResponse) {
+//       AdminConfig.findOne(where, function (err1, res1) {
+//         var resp = ({
+//           error: false,
+//           message: 'updated ',
+//           result: res1
+//         });
+//         res.json(resp);
+//       });
+//     }
+//   });
+// });
+
+// router.post('/updateUser', function (req, res) {
+//   var newAdmin = new Admin();
+//   var adminConfig = new AdminConfig();
+//   // update user
+//   if (req.body._id !== "") {
+//     Admin.findOne({ phone: req.body.phone }, function (err, adminResponsePhone) {
+//       if (adminResponsePhone) {
+//         if (adminResponsePhone._id == req.body._id) {
+
+//           var where = { _id: req.body._id };
+//           var query = { $set: { name: req.body.name, avatar: req.body.avatar, location: req.body.location, price: req.body.price, phone: req.body.phone, notes: req.body.notes, address: req.body.address, active: req.body.active, } }
+//           Admin.updateOne(where, query, function (err, updateResponse) {
+//             var resp = ({
+//               error: false,
+//               message: 'updated',
+//               result: updateResponse
+//             });
+
+//             res.json(resp);
+//           })
+//         } else {
+//           var resp = ({
+//             error: true,
+//             message: 'Phone Already Exist.'
+//           });
+
+//           res.json(resp);
+//         }
+//       } else {
+//         var where = { _id: req.body._id };
+//         var query = { $set: { name: req.body.name, avatar: req.body.avatar, location: req.body.location, email: req.body.email, phone: req.body.phone, notes: req.body.notes, address: req.body.address, active: req.body.active, } }
+//         Admin.updateOne(where, query, function (err, updateResponse) {
+//           var resp = ({
+//             error: false,
+//             message: 'updated',
+//             result: updateResponse
+//           });
+
+//           res.json(resp);
+//         })
+//       }
+//     })
+
+//   } else { // insert user
+//     Admin.findOne({ phone: req.body.phone }, function (err1, phoneExist) {
+//       if (err1) deferred.reject(err1.name + ': ' + err1.message);
+//       if (phoneExist) {
+//         var resp = ({
+//           error: true,
+//           message: 'Phone Already Exist.'
+//         });
+//         res.json(resp);
+//       } else {
+//         newAdmin.parent_id = req.body.parent_id;
+//         newAdmin.name = req.body.name;
+//         newAdmin.avatar = req.body.avatar;
+//         newAdmin.price = req.body.price;
+//         newAdmin.phone = req.body.phone;
+//         newAdmin.notes = req.body.notes;
+//         newAdmin.address = req.body.address;
+//         newAdmin.password = bcrypt.hashSync(req.body.password, 10);
+//         newAdmin.active = req.body.active;
+//         newAdmin.location = req.body.location;
+//         newAdmin.starred = req.body.starred;
+//         newAdmin.created_at = dateTime;
+//         newAdmin.save(function (err, insertedUser) {
+//           if (insertedUser) {
+//             adminConfig.parent_id = insertedUser._id;
+//             adminConfig.lang = 'en';
+//             adminConfig.save(function (err, adminConfigResponse) {
+//               var resp = ({
+//                 error: false,
+//                 message: 'success',
+//                 result: {
+//                   admin: insertedUser,
+//                   conifg: adminConfigResponse
+//                 }
+//               });
+//               res.json(resp);
+//             })
+//           } else {
+//             var resp = ({
+//               error: true,
+//               message: 'Insert Error.'
+//             });
+//             res.json(resp);
+//           }
+//         })
+
+//       }
+
+//     })
+
+
+
+//   }
+//   //-------------------------------------------
+// });
 
 module.exports = router;

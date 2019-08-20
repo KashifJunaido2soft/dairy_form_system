@@ -7,11 +7,10 @@ const router = express.Router();
 
 // for mysql
 var connection = mysql.createConnection({
-  host: 'database-1.cpl9upjkzzdr.us-east-1.rds.amazonaws.com',
-  port : '3306',
-  user: 'admin',
-  password: 'o2soft1234',
-  database: 'dmsdb'
+  host: 'localhost',
+  user: 'root',
+  password: '',
+  database: 'dairy_milk_system'
 });
 
 connection.connect(function (err) {
@@ -43,5 +42,24 @@ router.get('/updateLang/:langId/:configId', function (req, res) {
     }
   })
 });
+
+
+// for Mongoose
+// router.get('/updateLang/:langId/:configId', function (req, res) {
+//   var where = { _id: req.params.configId };
+//   var query = { lang: req.params.langId }
+//   AdminConfig.updateOne(where, query, function (err, updateResponse) {
+//     if (updateResponse) {
+//       AdminConfig.findOne(where, function (err1, res1) {
+//         var resp = ({
+//           error: false,
+//           message: 'success',
+//           result: res1
+//         });
+//         res.json(resp);
+//       });
+//     }
+//   });
+// });
 
 module.exports = router;
