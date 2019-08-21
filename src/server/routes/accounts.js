@@ -1,9 +1,10 @@
 
 const express = require('express');
-const mysql = require('mysql');
+const connection = require('../database/connection');
 const router = express.Router();
 var multer = require('multer');
 const fs = require('fs');
+const Helper = require('../helper/helper');
 
 
 var storage = multer.diskStorage({
@@ -20,33 +21,11 @@ var storage = multer.diskStorage({
 
 var upload = multer({ storage: storage });
 
-function yyyymmdd() {
-  var now = new Date();
-  var y = now.getFullYear();
-  var m = now.getMonth() + 1;
-  var d = now.getDate();
-  return y + '-' + (m < 10 ? '0' : '') + m + '-' + (d < 10 ? '0' : '') + d;
-}
 
 
+/////////////// routes ////////////////
 
-// for mysql
-var connection = mysql.createConnection({
-  host: 'database-1.cpl9upjkzzdr.us-east-1.rds.amazonaws.com',
-  port : '3306',
-  user: 'admin',
-  password: 'o2soft1234',
-  database: 'dmsdb'
-});
-
-connection.connect(function (err) {
-  if (err) {
-    // console.error('error connecting: ' + err.stack);
-    return;
-  }
-});
-
-// for mysql
+// new/edit accounts entry
 router.post('/updateAccount', upload.single('avatar'), function (req, res) {
 
   var img = req.body.avatar;
@@ -82,7 +61,7 @@ router.post('/updateAccount', upload.single('avatar'), function (req, res) {
               });
             }
           }
-          let querie = "UPDATE account set name='" + req.body.name + "',avatar='" + img + "',phone='" + req.body.phone + "',address='" + req.body.address + "',active='" + req.body.active + "', updated_at='" + yyyymmdd() + "'    where id = " + req.body.id + "";
+          let querie = "UPDATE account set name='" + req.body.name + "',avatar='" + img + "',phone='" + req.body.phone + "',address='" + req.body.address + "',active='" + req.body.active + "', updated_at='" + Helper.yyyymmdd() + "'    where id = " + req.body.id + "";
           connection.query(querie, function (error, upres) {
             if (upres.affectedRows > 0) {
               var resp = ({
@@ -125,7 +104,7 @@ router.post('/updateAccount', upload.single('avatar'), function (req, res) {
           }
         }
 
-        let querie = "UPDATE account set name='" + req.body.name + "',avatar='" + img + "',phone='" + req.body.phone + "',address='" + req.body.address + "',active='" + req.body.active + "', updated_at='" + yyyymmdd() + "'    where id = " + req.body.id + "";
+        let querie = "UPDATE account set name='" + req.body.name + "',avatar='" + img + "',phone='" + req.body.phone + "',address='" + req.body.address + "',active='" + req.body.active + "', updated_at='" + Helper.yyyymmdd() + "'    where id = " + req.body.id + "";
         connection.query(querie, function (error, upres) {
           if (upres.affectedRows > 0) {
             var resp = ({
@@ -154,7 +133,7 @@ router.post('/updateAccount', upload.single('avatar'), function (req, res) {
         res.json(resp);
 
       } else {
-        let insertData = 'INSERT INTO account (parent_id, name, avatar, phone, address, active, created_at) VALUES (' + req.body.parent_id + ', "' + req.body.name + '", "' + img + '",  ' + req.body.phone + ', "' + req.body.address + '",  "' + req.body.active + '",  "' + yyyymmdd() + '")';
+        let insertData = 'INSERT INTO account (parent_id, name, avatar, phone, address, active, created_at) VALUES (' + req.body.parent_id + ', "' + req.body.name + '", "' + img + '",  ' + req.body.phone + ', "' + req.body.address + '",  "' + req.body.active + '",  "' + Helper.yyyymmdd() + '")';
         connection.query(insertData, function (error, accountRes) {
           if (accountRes.insertId > 0) {
             var resp = ({
@@ -176,7 +155,7 @@ router.post('/updateAccount', upload.single('avatar'), function (req, res) {
   }
 });
 
-
+// get all accounts for listing
 router.get('/allAccounts/:userId/:parent_id', function (req, res) {
 
   var where = "";
@@ -204,6 +183,7 @@ router.get('/allAccounts/:userId/:parent_id', function (req, res) {
   })
 })
 
+// active/inactive accounts
 router.post('/updateUserDataActive', function (req, res) {
   var is_active = false;
   if (req.body.active === 'true') {
@@ -223,6 +203,7 @@ router.post('/updateUserDataActive', function (req, res) {
   })
 })
 
+// delete on row
 router.post('/deleteOneUser', function (req, res) {
   if (req.body.file != "") {
     // Check File Exit
@@ -260,6 +241,8 @@ router.post('/deleteOneUser', function (req, res) {
 
   })
 })
+
+// delete multiple rows
 router.post('/deleteManyUser', function (req, res) {
   var ids = [];
   req.body.forEach(element => {
@@ -300,6 +283,7 @@ router.post('/deleteManyUser', function (req, res) {
   })
 })
 
+// get all active account for new purchase form
 router.get('/allActiveAccounts/:userId/:parent_id', function (req, res) {
 
   var where = "where active='true'";
@@ -326,6 +310,8 @@ router.get('/allActiveAccounts/:userId/:parent_id', function (req, res) {
   })
 
 })
+
+
 
 
 

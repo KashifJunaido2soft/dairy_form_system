@@ -1,38 +1,13 @@
 
 const express = require('express');
-const mysql = require('mysql');
 const router = express.Router();
-// const Purchase = require('../models/purchase');
-// const adminConfig = require('../models/admin_config');
+const connection = require('../database/connection');
+const Helper = require('../helper/helper');
 
-function yyyymmdd(date = "") {
-  var now = new Date(date);
-  var y = now.getFullYear();
-  var m = now.getMonth() + 1;
-  var d = now.getDate();
-  return y + '-' + (m < 10 ? '0' : '') + m + '-' + (d < 10 ? '0' : '') + d;
-}
+///////////// functions ///////////////
 
-// for mysql
-var connection = mysql.createConnection({
-  host: 'database-1.cpl9upjkzzdr.us-east-1.rds.amazonaws.com',
-  port : '3306',
-  user: 'admin',
-  password: 'o2soft1234',
-  database: 'dmsdb'
-});
-
-connection.connect(function (err) {
-  if (err) {
-    // console.error('error connecting: ' + err.stack);
-    return;
-  }
-});
-
-
-
+// get invoice no by user id
 const getInvoiceNo = (userId, callback) => {
-
   let query = "SELECT * FROM purchase where userId=" + userId + " ORDER BY id DESC LIMIT 1";
   connection.query(query, function (error, purchase) {
     let invoiceNo;
@@ -50,12 +25,14 @@ const getInvoiceNo = (userId, callback) => {
   });
 }
 
+// get count of the purchases
 const getPurchaseReportAccountCount = (query, callback) => {
   connection.query(query, function (error, res) {
     return callback(res.length);
   });
 }
 
+// insert purchase
 const insertPurchase = (req, invouceNo, price, callback) => {
 
   var parent_id;
@@ -65,11 +42,13 @@ const insertPurchase = (req, invouceNo, price, callback) => {
     parent_id = req.body.userId;
   }
 
-  let insertData = 'INSERT INTO purchase (parent_id, userId, account_id, item_type, price, quantity, location, total_price, invoice_no, date, created_at) VALUES (' + parent_id + ', ' + req.body.userId + ',  ' + req.body.account_id.id + ', "' + req.body.item_type + '", ' + price + ',  ' + req.body.quantity + ',"' + req.body.location + '", ' + price * req.body.quantity + ',  "' + invouceNo + '", "' + yyyymmdd(req.body.date) + '",  "' + yyyymmdd() + '")';
+  let insertData = 'INSERT INTO purchase (parent_id, userId, account_id, item_type, price, quantity, location, total_price, invoice_no, date, created_at) VALUES (' + parent_id + ', ' + req.body.userId + ',  ' + req.body.account_id.id + ', "' + req.body.item_type + '", ' + price + ',  ' + req.body.quantity + ',"' + req.body.location + '", ' + price * req.body.quantity + ',  "' + invouceNo + '", "' + Helper.yyyymmdd(req.body.date) + '",  "' + Helper.yyyymmdd() + '")';
   connection.query(insertData, function (error, insertedResponse) {
     return callback(insertedResponse);
   });
 }
+
+// insert purchase for api
 const insertPurchase1 = (req, invouceNo, price, account_id, callback) => {
 
   var parent_id;
@@ -78,18 +57,22 @@ const insertPurchase1 = (req, invouceNo, price, account_id, callback) => {
   } else {
     parent_id = req.body.userId;
   }
-  let insertData = 'INSERT INTO purchase (parent_id, userId, account_id, item_type, price, quantity, location, total_price, invoice_no, date, created_at) VALUES (' + parent_id + ', ' + req.body.userId + ',  ' + account_id + ', "' + req.body.item_type + '", ' + price + ',  ' + req.body.quantity + ',"' + req.body.location + '", ' + price * req.body.quantity + ',  "' + invouceNo + '", "' + yyyymmdd(req.body.date) + '",  "' + yyyymmdd() + '")';
+  let insertData = 'INSERT INTO purchase (parent_id, userId, account_id, item_type, price, quantity, location, total_price, invoice_no, date, created_at) VALUES (' + parent_id + ', ' + req.body.userId + ',  ' + account_id + ', "Cow", ' + price + ',  ' + req.body.quantity + ',"' + req.body.location + '", ' + price * req.body.quantity + ',  "' + invouceNo + '", "' + Helper.yyyymmdd(req.body.date) + '",  "' + Helper.yyyymmdd() + '")';
   connection.query(insertData, function (error, insertedResponse) {
     return callback(insertedResponse);
   });
 }
+
+// get price
 const getConfigPrice = (req, callback) => {
   let id;
-  if (req.body.parent_id !== 0) {
+
+  if (req.body.parent_id !== '0' && req.body.parent_id !== 0) {
     id = req.body.parent_id;
   } else {
     id = req.body.userId;
   }
+
   let query = "SELECT * FROM admin_config where parent_id=" + id + " ORDER BY id DESC LIMIT 1";
   connection.query(query, function (error, adminConfig) {
     let price;
@@ -100,11 +83,12 @@ const getConfigPrice = (req, callback) => {
   });
 }
 
+/////////////// routes ////////////////
 
-//For mysql
+// new/edit purchase entry
 router.post('/updatePurchase', function (req, res) {
   if (req.body.id !== "") {
-    let querie = "UPDATE purchase set account_id='" + req.body.account_id.id + "',item_type='" + req.body.item_type + "',quantity='" + req.body.quantity + "',total_price='" + req.body.price * req.body.quantity + "',date='" + yyyymmdd(req.body.date) + "', updated_at='" + yyyymmdd() + "'    where id = " + req.body.id + "";
+    let querie = "UPDATE purchase set account_id='" + req.body.account_id.id + "',item_type='" + req.body.item_type + "',quantity='" + req.body.quantity + "',total_price='" + req.body.price * req.body.quantity + "',date='" + Helper.yyyymmdd(req.body.date) + "', updated_at='" + Helper.yyyymmdd() + "'    where id = " + req.body.id + "";
     connection.query(querie, function (error, upres) {
       if (upres) {
         if (upres.affectedRows > 0) {
@@ -184,6 +168,7 @@ router.post('/updatePurchase', function (req, res) {
   }
 });
 
+// get all purchases
 router.get('/allPurchase/:userId/:parent_id', function (req, res) {
   var where = "";
   if (req.params.parent_id != 0) {
@@ -221,17 +206,19 @@ router.get('/allPurchase/:userId/:parent_id', function (req, res) {
   })
 
 })
+
+// report accounts
 router.get('/getPurchaseReportAccount/:userId/:parent_id/:accountId/:startDate/:endDate/:groupBy/:sortDirection/:column/:pageSize/:offset', function (req, res) {
 
   var dateFormat = 'DATE_FORMAT(purchase.date, "%Y-%m-%d")';
   var selectDte = 'purchase.date as date';
   switch (req.params.groupBy) {
     case '1': //for days
-      selectDte = 'DATE_FORMAT(purchase.date, "%Y-%m-%d") as date';
+      selectDte = 'DATE_FORMAT(purchase.date, "%d %M, %Y") as date';
       dateFormat = "DATE_FORMAT(purchase.date, '%Y-%m-%d')";
       break;
     case '2': //for months
-      selectDte = 'DATE_FORMAT(purchase.date, "%Y-%m") as date';
+      selectDte = 'DATE_FORMAT(purchase.date, "%M, %Y") as date';
       dateFormat = "DATE_FORMAT(purchase.date, '%Y-%m')";
       break;
     case '3': //for years
@@ -324,6 +311,7 @@ router.get('/getPurchaseReportAccount/:userId/:parent_id/:accountId/:startDate/:
 
 })
 
+// report daily basis
 router.get('/getPurchaseReportAccountDaily/:userId/:parent_id/:startDate/:sortDirection/:column/:pageSize/:offset', function (req, res) {
   var orderBycolumn = "";
   if (req.params.sortDirection != 'null') {
@@ -399,18 +387,18 @@ router.get('/getPurchaseReportAccountDaily/:userId/:parent_id/:startDate/:sortDi
   })
 
 })
-
+// report admin wise
 router.get('/getPurchaseReportAdmin/:userId/:adminId/:startDate/:endDate/:groupBy/:sortDirection/:column/:pageSize/:offset', function (req, res) {
 
   var dateFormat = 'DATE_FORMAT(purchase.date, "%Y-%m-%d")';
   var selectDte = 'purchase.date as date';
   switch (req.params.groupBy) {
     case '1': //for days
-      selectDte = 'DATE_FORMAT(purchase.date, "%Y-%m-%d") as date';
+      selectDte = 'DATE_FORMAT(purchase.date, "%d %M, %Y") as date';
       dateFormat = "DATE_FORMAT(purchase.date, '%Y-%m-%d')";
       break;
     case '2': //for months
-      selectDte = 'DATE_FORMAT(purchase.date, "%Y-%m") as date';
+      selectDte = 'DATE_FORMAT(purchase.date, "%M, %Y") as date';
       dateFormat = "DATE_FORMAT(purchase.date, '%Y-%m')";
       break;
     case '3': //for years
@@ -498,6 +486,7 @@ router.get('/getPurchaseReportAdmin/:userId/:adminId/:startDate/:endDate/:groupB
 
 })
 
+// delete one row
 router.post('/deleteOneUser', function (req, res) {
 
   let querie = "DELETE FROM purchase  where id = " + req.body.id + "";
@@ -527,7 +516,7 @@ router.post('/deleteOneUser', function (req, res) {
 
   })
 })
-
+// delete multiple rows
 router.post('/deleteManyUser', function (req, res) {
 
   const ids = req.body;
@@ -558,13 +547,16 @@ router.post('/deleteManyUser', function (req, res) {
   })
 })
 
+
+
+
+////////////////////// apis for mobile /////////////////////
+
+// new purchase entry api 
 router.post('/addPurchaseApi', function (req, res) {
-
-
   // update Purchase
   if (req.body.id !== "") {
-
-    let querie = "UPDATE purchase set account_id='" + req.body.account_id.id + "',item_type='" + req.body.item_type + "',quantity='" + req.body.quantity + "',total_price='" + req.body.price * req.body.quantity + "',date='" + yyyymmdd(req.body.date) + "', updated_at='" + yyyymmdd() + "'    where id = " + req.body.id + "";
+    let querie = "UPDATE purchase set account_id='" + req.body.account_id + "',quantity='" + req.body.quantity + "',total_price='" + req.body.price * req.body.quantity + "',date='" + Helper.yyyymmdd(req.body.date) + "', updated_at='" + Helper.yyyymmdd() + "'    where id = " + req.body.id + "";
     connection.query(querie, function (error, upres) {
       if (upres) {
         if (upres.affectedRows > 0) {
@@ -588,7 +580,7 @@ router.post('/addPurchaseApi', function (req, res) {
 
   } else {
     getInvoiceNo(req.body.userId, function (invoiceNo) {
-      if (req.body.price !== "" && req.body.price !== 0) {
+      if (req.body.price !== "" && req.body.price !== '0' && req.body.price !== 0) {
         insertPurchase1(req, invoiceNo, req.body.price, req.body.account_id, function (insertedData) {
           if (insertedData) {
             if (insertedData.affectedRows > 0) {
@@ -646,6 +638,79 @@ router.post('/addPurchaseApi', function (req, res) {
   }
   //-------------------------------------------
 });
+
+// report daily basis api
+router.get('/getPurchaseReportAccountDailyApi/:userId/:parent_id/:date', function (req, res) {
+  var where = "";
+  if (req.params.parent_id != 0) {
+    where = "WHERE account.parent_id = " + req.params.userId;
+  }
+
+  let querieCount = "SELECT account.name, account.phone, DATE_FORMAT(purchase.date, '%Y-%m-%d') as date,  sum(purchase.quantity) as total_quantity, sum(purchase.total_price) as total_price FROM account LEFT JOIN purchase ON account.id = purchase.account_id  AND purchase.date = '" + req.params.date + "' " + where + " Group By account.id";
+  let querieData = "SELECT account.name, account.phone, DATE_FORMAT(purchase.date, '%Y-%m-%d') as date,  sum(purchase.quantity) as total_quantity, sum(purchase.total_price) as total_price FROM account LEFT JOIN purchase ON account.id = purchase.account_id  AND purchase.date = '" + req.params.date + "' " + where + " Group By account.id ORDER BY purchase.date DESC";
+
+  getPurchaseReportAccountCount(querieCount, function (count) {
+    if (count > 0) {
+      connection.query(querieData, function (error, purchase) {
+        if (purchase) {
+          if (purchase.length > 0) {
+            var resp = ({
+              error: false,
+              message: 'success.',
+              result: {
+                count: count,
+                data: purchase
+              }
+            });
+            res.json(resp);
+          } else {
+            var resp = ({
+              error: false,
+              message: 'data not found2.',
+              result: {
+                count: 0,
+                data: []
+              }
+            });
+            res.json(resp);
+          }
+        } else {
+          var resp = ({
+            error: false,
+            message: 'data not found2.',
+            result: {
+              count: 0,
+              data: []
+            }
+          });
+          res.json(resp);
+        }
+
+      })
+    } else {
+      var resp = ({
+        error: false,
+        message: 'data not found1.',
+        result: {
+          count: 0,
+          data: []
+        }
+      });
+      res.json(resp);
+    }
+
+  })
+
+})
+
+
+
+
+
+
+
+
+
 //For mongoose
 // router.post('/deleteManyUser', function (req, res) {
 

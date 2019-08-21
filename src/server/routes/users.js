@@ -3,7 +3,6 @@
  */
 const express = require('express');
 // const mongoose = require('mongoose');
-const mysql = require('mysql');
 const router = express.Router();
 var multer = require('multer');
 const fs = require('fs');
@@ -13,6 +12,8 @@ var _ = require('lodash');
 // const tcp = require('../socket/tcp');
 // var jwt = require('jsonwebtoken');
 var net = require('net');
+const connection = require('../database/connection');
+const Helper = require('../helper/helper');
 
 // console.log(`${mongoose.version}`);
 var storage = multer.diskStorage({
@@ -33,36 +34,10 @@ const dateTime = new Date().toLocaleString('en-US', {
   timeZone: 'Asia/Karachi'
 });
 
-function yyyymmdd() {
-  var now = new Date();
-  var y = now.getFullYear();
-  var m = now.getMonth() + 1;
-  var d = now.getDate();
-  return y + '-' + (m < 10 ? '0' : '') + m + '-' + (d < 10 ? '0' : '') + d;
-}
 
-// for monogo db
-// const db = "mongodb://localhost:27017/admin_panel";
-// mongoose.promise = global.promise;
-// mongoose.connect(db, { useNewUrlParser: true }, function (err) {
-//   if (err) {
-//     console.error("Error: !" + err);
-//   }
-// });
+/////////////// routes ////////////////
 
-
-
-// for mysql
-var connection = mysql.createConnection({
-  host: 'database-1.cpl9upjkzzdr.us-east-1.rds.amazonaws.com',
-  port : '3306',
-  user: 'admin',
-  password: 'o2soft1234',
-  database: 'dmsdb'
-});
-
-// for mysql
-
+// new/edit user entry
 router.post('/updateUser', upload.single('avatar'), function (req, res) {
   // update user
   var price = 0;
@@ -193,7 +168,7 @@ router.post('/updateUser', upload.single('avatar'), function (req, res) {
 
       } else {
 
-        let insertAdminData = 'INSERT INTO admin (parent_id, name, avatar, price, phone, notes, address, password, active, location, starred, created_at) VALUES (' + req.body.parent_id + ', "' + req.body.name + '", "", ' + req.body.price + ', ' + req.body.phone + ', "' + req.body.notes + '", "' + req.body.address + '", "' + bcrypt.hashSync(req.body.password, 10) + '", "' + req.body.active + '", "' + req.body.location + '", "' + req.body.starred + '", "' + yyyymmdd() + '")';
+        let insertAdminData = 'INSERT INTO admin (parent_id, name, avatar, price, phone, notes, address, password, active, location, starred, created_at) VALUES (' + req.body.parent_id + ', "' + req.body.name + '", "", ' + req.body.price + ', ' + req.body.phone + ', "' + req.body.notes + '", "' + req.body.address + '", "' + bcrypt.hashSync(req.body.password, 10) + '", "' + req.body.active + '", "' + req.body.location + '", "' + req.body.starred + '", "' + Helper.yyyymmdd() + '")';
         connection.query(insertAdminData, function (error, adminRes) {
           if (adminRes.insertId > 0) {
             let insertAdminConfigData = 'INSERT INTO admin_config (parent_id, lang) VALUES (' + adminRes.insertId + ', "en")';
@@ -217,6 +192,7 @@ router.post('/updateUser', upload.single('avatar'), function (req, res) {
   }
 });
 
+// get all users by login user id
 router.get('/allUsers/:userId', function (req, res) {
   let querie = "SELECT * FROM admin where parent_id = " + req.params.userId + " Order By id DESC";
   connection.query(querie, function (error, users) {
@@ -238,7 +214,7 @@ router.get('/allUsers/:userId', function (req, res) {
   })
 })
 
-
+// starred/unstarred user
 router.post('/updateUserDataStarred', function (req, res) {
   var is_starred = false;
   if (req.body.starred === 'true') {
@@ -265,6 +241,7 @@ router.post('/updateUserDataStarred', function (req, res) {
   })
 });
 
+// active/inactive user
 router.post('/updateUserDataActive', function (req, res) {
 
   var is_active = false;
@@ -286,6 +263,7 @@ router.post('/updateUserDataActive', function (req, res) {
   })
 })
 
+// delete one row
 router.post('/deleteOneUser', function (req, res) {
 
   if (req.body.avatar != "") {
@@ -325,6 +303,7 @@ router.post('/deleteOneUser', function (req, res) {
   })
 })
 
+// delete multiple rows
 router.post('/deleteManyUser', function (req, res) {
   const ids = req.body;
   let querie = "DELETE FROM admin  where id IN (" + ids + ")";
@@ -345,6 +324,7 @@ router.post('/deleteManyUser', function (req, res) {
   })
 })
 
+// update password from profile
 router.post('/updateUserPassword', function (req, res) {
 
   let querie = "UPDATE admin set password='" + bcrypt.hashSync(req.body.password, 10) + "' where id = " + req.body.id + "";
@@ -360,6 +340,7 @@ router.post('/updateUserPassword', function (req, res) {
   })
 })
 
+// update price from profile
 router.post('/updatePrice', function (req, res) {
 
   let querie = "UPDATE admin_config set price='" + req.body.price + "' where parent_id = " + req.body.id + "";
@@ -381,7 +362,7 @@ router.post('/updatePrice', function (req, res) {
   })
 });
 
-
+// get all active users
 router.get('/allActiveUsers/:userId', function (req, res) {
   var where = "where parent_id = " + req.params.userId + " and active='true'";
   let querie = "SELECT * FROM admin " + where + " Order By id DESC";
@@ -405,6 +386,9 @@ router.get('/allActiveUsers/:userId', function (req, res) {
   })
 
 })
+
+
+
 
 // for mongoose
 // router.post('/updateUserDataStarred', function (req, res) {

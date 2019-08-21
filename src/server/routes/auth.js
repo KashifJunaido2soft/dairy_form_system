@@ -3,8 +3,8 @@
  */
 const express = require('express');
 // const mongoose = require('mongoose');
-const mysql = require('mysql');
 const router = express.Router();
+const connection = require('../database/connection');
 // const User = require('../models/admin');
 // const adminConfig = require('../models/admin_config');
 const bcrypt = require('bcryptjs');
@@ -14,52 +14,9 @@ var _ = require('lodash');
 // var multer = require('multer');
 
 
-// for monogo db
-// const db = "mongodb://localhost:27017/admin_panel";
-// mongoose.promise = global.promise;
-// mongoose.connect(db, { useNewUrlParser: true }, function (err) {
-//   if (err) {
-//     console.error("Error: !" + err);
-//   }
-// });
+/////////////// routes ////////////////
 
-// for mysql
-var connection = mysql.createConnection({
-  host: 'database-1.cpl9upjkzzdr.us-east-1.rds.amazonaws.com',
-  port : '3306',
-  user: 'admin',
-  password: 'o2soft1234',
-  database: 'dmsdb'
-});
-// var connection = mysql.createConnection({
-//   host: 'database-1.cpl9upjkzzdr.us-east-1.rds.amazonaws.com',
-//   port : '3306',
-//   user: 'admin',
-//   password: 'o2soft1234'
-// });
-connection.connect(function (err) {
-  if (err) {
-    console.error('error connecting: ' + err.stack);
-    return;
-  }
-
-  // console.log('mysql connected id is ' + connection.threadId);
-});
-
-// var storage = multer.diskStorage({
-//   destination: function (req, file, cb) {
-//     cb(null, 'uploads/')
-//   },
-//   filename: function (req, file, cb) {
-//     var typ = file.mimetype.split("/");
-//     var imgType = typ[1];
-//     cb(null, file.fieldname + '-' + Date.now() + '.' + imgType);
-//   }
-// })
-
-// var upload = multer({ storage: storage });
-
-// for mysql
+// login 
 
 router.post('/login', function (req, res) {
   var deferred = Q.defer();
@@ -104,6 +61,17 @@ router.post('/login', function (req, res) {
     }
   })
 });
+
+// for monogo db
+// const db = "mongodb://localhost:27017/admin_panel";
+// mongoose.promise = global.promise;
+// mongoose.connect(db, { useNewUrlParser: true }, function (err) {
+//   if (err) {
+//     console.error("Error: !" + err);
+//   }
+// });
+
+
 
 // for mongoose
 //  router.post('/register',upload.single('profile'), function(req,res)

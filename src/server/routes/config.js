@@ -2,27 +2,12 @@
  * Created by Dell on 8/8/2018.
  */
 const express = require('express');
-const mysql = require('mysql');
 const router = express.Router();
+const connection = require('../database/connection');
 
-// for mysql
-var connection = mysql.createConnection({
-  host: 'database-1.cpl9upjkzzdr.us-east-1.rds.amazonaws.com',
-  port : '3306',
-  user: 'admin',
-  password: 'o2soft1234',
-  database: 'dmsdb'
-});
+/////////////// routes ////////////////
 
-connection.connect(function (err) {
-  if (err) {
-    console.error('error connecting: ' + err.stack);
-    return;
-  }
-});
-
-// For mysql
-
+// update language
 router.get('/updateLang/:langId/:configId', function (req, res) {
 
   let querie = "UPDATE admin_config set lang='" + req.params.langId + "' where id = " + req.params.configId + "";
@@ -43,6 +28,9 @@ router.get('/updateLang/:langId/:configId', function (req, res) {
     }
   })
 });
+
+
+
 
 
 // for Mongoose
