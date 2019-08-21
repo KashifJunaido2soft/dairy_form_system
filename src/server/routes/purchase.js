@@ -4,6 +4,7 @@ const router = express.Router();
 const connection = require('../database/connection');
 const Helper = require('../helper/helper');
 
+
 ///////////// functions ///////////////
 
 // get invoice no by user id
@@ -32,9 +33,12 @@ const getPurchaseReportAccountCount = (query, callback) => {
   });
 }
 
+
+
 // insert purchase
 const insertPurchase = (req, invouceNo, price, callback) => {
-
+  console.log(req.body.date);
+  console.log(Helper.yyyymmdd(req.body.date));
   var parent_id;
   if (req.body.parent_id != 0) {
     parent_id = req.body.parent_id;
@@ -87,6 +91,7 @@ const getConfigPrice = (req, callback) => {
 
 // new/edit purchase entry
 router.post('/updatePurchase', function (req, res) {
+  // console.log(req.body)
   if (req.body.id !== "") {
     let querie = "UPDATE purchase set account_id='" + req.body.account_id.id + "',item_type='" + req.body.item_type + "',quantity='" + req.body.quantity + "',total_price='" + req.body.price * req.body.quantity + "',date='" + Helper.yyyymmdd(req.body.date) + "', updated_at='" + Helper.yyyymmdd() + "'    where id = " + req.body.id + "";
     connection.query(querie, function (error, upres) {
