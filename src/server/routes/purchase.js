@@ -37,8 +37,6 @@ const getPurchaseReportAccountCount = (query, callback) => {
 
 // insert purchase
 const insertPurchase = (req, invouceNo, price, callback) => {
-  console.log(req.body.date);
-  console.log(Helper.yyyymmdd(req.body.date));
   var parent_id;
   if (req.body.parent_id != 0) {
     parent_id = req.body.parent_id;
@@ -46,7 +44,7 @@ const insertPurchase = (req, invouceNo, price, callback) => {
     parent_id = req.body.userId;
   }
 
-  let insertData = 'INSERT INTO purchase (parent_id, userId, account_id, item_type, price, quantity, location, total_price, invoice_no, date, created_at) VALUES (' + parent_id + ', ' + req.body.userId + ',  ' + req.body.account_id.id + ', "' + req.body.item_type + '", ' + price + ',  ' + req.body.quantity + ',"' + req.body.location + '", ' + price * req.body.quantity + ',  "' + invouceNo + '", "' + Helper.yyyymmdd(req.body.date) + '",  "' + Helper.yyyymmdd() + '")';
+  let insertData = 'INSERT INTO purchase (parent_id, userId, account_id, item_type, price, quantity, location, total_price, invoice_no, date, created_at) VALUES (' + parent_id + ', ' + req.body.userId + ',  ' + req.body.account_id.id + ', "' + req.body.item_type + '", ' + price + ',  ' + req.body.quantity + ',"' + req.body.location + '", ' + price * req.body.quantity + ',  "' + invouceNo + '", "' + req.body.date + '",  "' + Helper.yyyymmdd() + '")';
   connection.query(insertData, function (error, insertedResponse) {
     return callback(insertedResponse);
   });
@@ -61,7 +59,7 @@ const insertPurchase1 = (req, invouceNo, price, account_id, callback) => {
   } else {
     parent_id = req.body.userId;
   }
-  let insertData = 'INSERT INTO purchase (parent_id, userId, account_id, item_type, price, quantity, location, total_price, invoice_no, date, created_at) VALUES (' + parent_id + ', ' + req.body.userId + ',  ' + account_id + ', "Cow", ' + price + ',  ' + req.body.quantity + ',"' + req.body.location + '", ' + price * req.body.quantity + ',  "' + invouceNo + '", "' + Helper.yyyymmdd(req.body.date) + '",  "' + Helper.yyyymmdd() + '")';
+  let insertData = 'INSERT INTO purchase (parent_id, userId, account_id, item_type, price, quantity, location, total_price, invoice_no, date, created_at) VALUES (' + parent_id + ', ' + req.body.userId + ',  ' + account_id + ', "Cow", ' + price + ',  ' + req.body.quantity + ',"' + req.body.location + '", ' + price * req.body.quantity + ',  "' + invouceNo + '", "' + req.body.date + '",  "' + Helper.yyyymmdd() + '")';
   connection.query(insertData, function (error, insertedResponse) {
     return callback(insertedResponse);
   });
@@ -91,9 +89,9 @@ const getConfigPrice = (req, callback) => {
 
 // new/edit purchase entry
 router.post('/updatePurchase', function (req, res) {
-  // console.log(req.body)
+  console.log(req.body.date)
   if (req.body.id !== "") {
-    let querie = "UPDATE purchase set account_id='" + req.body.account_id.id + "',item_type='" + req.body.item_type + "',quantity='" + req.body.quantity + "',total_price='" + req.body.price * req.body.quantity + "',date='" + Helper.yyyymmdd(req.body.date) + "', updated_at='" + Helper.yyyymmdd() + "'    where id = " + req.body.id + "";
+    let querie = "UPDATE purchase set account_id='" + req.body.account_id.id + "',item_type='" + req.body.item_type + "',quantity='" + req.body.quantity + "',total_price='" + req.body.price * req.body.quantity + "',date='" + req.body.date + "', updated_at='" + Helper.yyyymmdd() + "'    where id = " + req.body.id + "";
     connection.query(querie, function (error, upres) {
       if (upres) {
         if (upres.affectedRows > 0) {
@@ -561,7 +559,7 @@ router.post('/deleteManyUser', function (req, res) {
 router.post('/addPurchaseApi', function (req, res) {
   // update Purchase
   if (req.body.id !== "") {
-    let querie = "UPDATE purchase set account_id='" + req.body.account_id + "',quantity='" + req.body.quantity + "',total_price='" + req.body.price * req.body.quantity + "',date='" + Helper.yyyymmdd(req.body.date) + "', updated_at='" + Helper.yyyymmdd() + "'    where id = " + req.body.id + "";
+    let querie = "UPDATE purchase set account_id='" + req.body.account_id + "',quantity='" + req.body.quantity + "',total_price='" + req.body.price * req.body.quantity + "',date='" + req.body.date + "', updated_at='" + Helper.yyyymmdd() + "'    where id = " + req.body.id + "";
     connection.query(querie, function (error, upres) {
       if (upres) {
         if (upres.affectedRows > 0) {
