@@ -5,6 +5,7 @@ const connection = require('../database/connection');
 const Helper = require('../helper/helper');
 
 
+
 ///////////// functions ///////////////
 
 // get invoice no by user id
@@ -29,6 +30,7 @@ const getInvoiceNo = (userId, callback) => {
 // get count of the purchases
 const getPurchaseReportAccountCount = (query, callback) => {
   connection.query(query, function (error, res) {
+    // console.log(error);
     return callback(res.length);
   });
 }
@@ -89,7 +91,6 @@ const getConfigPrice = (req, callback) => {
 
 // new/edit purchase entry
 router.post('/updatePurchase', function (req, res) {
-  console.log(req.body.date)
   if (req.body.id !== "") {
     let querie = "UPDATE purchase set account_id='" + req.body.account_id.id + "',item_type='" + req.body.item_type + "',quantity='" + req.body.quantity + "',total_price='" + req.body.price * req.body.quantity + "',date='" + req.body.date + "', updated_at='" + Helper.yyyymmdd() + "'    where id = " + req.body.id + "";
     connection.query(querie, function (error, upres) {
@@ -210,9 +211,144 @@ router.get('/allPurchase/:userId/:parent_id', function (req, res) {
 
 })
 
+// get all purchases with pagination
+router.get('/allPurchases/:userId/:parent_id/:sort/:column/:limit/:offset/:search', function (req, res) {
+  // qs.escape(req.params.search);
+  var search = "";
+  if (req.params.search != 'null') {
+    search = " AND (purchase.item_type LIKE '%" + req.params.search +
+      "%'  OR purchase.price LIKE '%" + req.params.search +
+      "%'  OR purchase.quantity LIKE '%" + req.params.search +
+      "%'  OR purchase.total_price  LIKE '%" + req.params.search +
+      "%'  OR purchase.location LIKE '%" + req.params.search +
+      "%'  OR purchase.invoice_no LIKE '%" + req.params.search +
+      "%'  OR purchase.date LIKE '%" + req.params.search +
+      "%'  OR account.phone LIKE '%" + req.params.search +
+      "%'  OR account.name LIKE '%" + req.params.search +
+      "%' ) ";
+  }
+
+  var orderBycolumn = "";
+  if (req.params.sort != 'null') {
+    switch (req.params.column) {
+      case 'id':
+        orderBycolumn = 'Order By purchase.id ' + req.params.sort;
+        break;
+      case 'date':
+        orderBycolumn = 'Order By purchase.date ' + req.params.sort;
+        break;
+      case 'invoice':
+        orderBycolumn = 'Order By purchase.invoice_no ' + req.params.sort;
+        break;
+      case 'location':
+        orderBycolumn = 'Order By purchase.location ' + req.params.sort;
+        break;
+      case 'account':
+        orderBycolumn = 'Order By account.phone ' + req.params.sort;
+        break;
+      case 'quantity':
+        orderBycolumn = 'Order By purchase.quantity ' + req.params.sort;
+        break;
+      case 'price':
+        orderBycolumn = 'Order By purchase.price ' + req.params.sort;
+        break;
+      case 'total_price':
+        orderBycolumn = 'Order By purchase.total_price ' + req.params.sort;
+        break;
+    }
+  }
+  var where = "";
+  if (req.params.parent_id != 0) {
+    where = "where purchase.userId = " + req.params.userId + "";
+  } else {
+    where = "where purchase.parent_id = " + req.params.userId + "";
+  }
+  let querieData = "SELECT purchase.*, account.name, account.phone  FROM purchase LEFT JOIN account ON purchase.account_id = account.id " + where + search + " " + orderBycolumn + " " + " LIMIT " + req.params.limit + " OFFSET " + req.params.offset + "";
+  let querieCount = "SELECT purchase.*, account.name, account.phone  FROM purchase LEFT JOIN account ON purchase.account_id = account.id " + where + search + "";
+  // console.log(querieCount);
+  getPurchaseReportAccountCount(querieCount, function (count) {
+    if (count > 0) {
+      connection.query(querieData, function (error, purchase) {
+        if (purchase) {
+          if (purchase.length > 0) {
+            var resp = ({
+              error: false,
+              message: 'success.',
+              result: {
+                count: count,
+                data: purchase
+              }
+            });
+            res.json(resp);
+          } else {
+            var resp = ({
+              error: false,
+              message: 'data not found2.',
+              result: {
+                count: 0,
+                data: []
+              }
+            });
+            res.json(resp);
+          }
+        } else {
+          var resp = ({
+            error: false,
+            message: 'data not found2.',
+            result: {
+              count: 0,
+              data: []
+            }
+          });
+          res.json(resp);
+        }
+
+      })
+    } else {
+      var resp = ({
+        error: false,
+        message: 'data not found1.',
+        result: {
+          count: 0,
+          data: []
+        }
+      });
+      res.json(resp);
+    }
+
+  });
+  // connection.query(querie, function (error, purchase) {
+  //   if (purchase) {
+  //     if (purchase.length > 0) {
+  //       var resp = ({
+  //         error: false,
+  //         message: 'success.',
+  //         result: purchase
+  //       });
+  //       res.json(resp);
+  //     } else {
+  //       var resp = ({
+  //         error: false,
+  //         message: 'not found.',
+  //         result: []
+  //       });
+  //       res.json(resp);
+  //     }
+  //   } else {
+  //     var resp = ({
+  //       error: false,
+  //       message: 'not found.',
+  //       result: []
+  //     });
+  //     res.json(resp);
+  //   }
+
+  // })
+
+})
+
 // report accounts
 router.get('/getPurchaseReportAccount/:userId/:parent_id/:accountId/:startDate/:endDate/:groupBy/:sortDirection/:column/:pageSize/:offset', function (req, res) {
-
   var dateFormat = 'DATE_FORMAT(purchase.date, "%Y-%m-%d")';
   var selectDte = 'purchase.date as date';
   switch (req.params.groupBy) {
@@ -558,33 +694,35 @@ router.post('/deleteManyUser', function (req, res) {
 // new purchase entry api 
 router.post('/addPurchaseApi', function (req, res) {
   // update Purchase
-  if (req.body.id !== "''") {
-    let querie = "UPDATE purchase set account_id='" + req.body.account_id + "',quantity='" + req.body.quantity + "',total_price='" + req.body.price * req.body.quantity + "',date='" + req.body.date + "', updated_at='" + Helper.yyyymmdd() + "'    where id = " + req.body.id + "";
-    connection.query(querie, function (error, upres) {
-      if (upres) {
-        if (upres.affectedRows > 0) {
+  getInvoiceNo(req.body.userId, function (invoiceNo) {
+    if (req.body.price !== "" && req.body.price !== '0' && req.body.price !== 0) {
+      insertPurchase1(req, invoiceNo, req.body.price, req.body.account_id, function (insertedData) {
+        if (insertedData) {
+          if (insertedData.affectedRows > 0) {
+            var resp = ({
+              error: false,
+              message: 'success.'
+            });
+            res.json(resp);
+          } else {
+            var resp = ({
+              error: false,
+              message: 'not insert.'
+            });
+            res.json(resp);
+          }
+        } else {
           var resp = ({
             error: false,
-            message: 'success'
+            message: 'not insert.'
           });
           res.json(resp);
         }
-      } else {
-        var resp = ({
-          error: true,
-          message: 'not update'
-        });
-        res.json(resp);
-      }
 
-
-    })
-
-
-  } else {
-    getInvoiceNo(req.body.userId, function (invoiceNo) {
-      if (req.body.price !== "" && req.body.price !== '0' && req.body.price !== 0) {
-        insertPurchase1(req, invoiceNo, req.body.price, req.body.account_id, function (insertedData) {
+      });
+    } else {
+      getConfigPrice(req, function (price) {
+        insertPurchase1(req, invoiceNo, price, req.body.account_id, function (insertedData) {
           if (insertedData) {
             if (insertedData.affectedRows > 0) {
               var resp = ({
@@ -607,38 +745,36 @@ router.post('/addPurchaseApi', function (req, res) {
             res.json(resp);
           }
 
-        });
-      } else {
-        getConfigPrice(req, function (price) {
-          insertPurchase1(req, invoiceNo, price, req.body.account_id, function (insertedData) {
-            if (insertedData) {
-              if (insertedData.affectedRows > 0) {
-                var resp = ({
-                  error: false,
-                  message: 'success.'
-                });
-                res.json(resp);
-              } else {
-                var resp = ({
-                  error: false,
-                  message: 'not insert.'
-                });
-                res.json(resp);
-              }
-            } else {
-              var resp = ({
-                error: false,
-                message: 'not insert.'
-              });
-              res.json(resp);
-            }
-
-          })
         })
+      })
+    }
+
+  });
+  //-------------------------------------------
+});
+
+router.post('/updatePurchaseApi', function (req, res) {
+  // update Purchase
+    let querie = "UPDATE purchase set account_id='" + req.body.account_id + "',quantity='" + req.body.quantity + "',total_price='" + req.body.price * req.body.quantity + "',date='" + req.body.date + "', updated_at='" + Helper.yyyymmdd() + "'    where id = " + req.body.id + "";
+    connection.query(querie, function (error, upres) {
+      if (upres) {
+        if (upres.affectedRows > 0) {
+          var resp = ({
+            error: false,
+            message: 'success'
+          });
+          res.json(resp);
+        }
+      } else {
+        var resp = ({
+          error: true,
+          message: 'not update'
+        });
+        res.json(resp);
       }
 
-    });
-  }
+
+    })
   //-------------------------------------------
 });
 
