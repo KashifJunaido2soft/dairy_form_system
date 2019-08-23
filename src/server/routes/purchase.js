@@ -558,7 +558,7 @@ router.post('/deleteManyUser', function (req, res) {
 // new purchase entry api 
 router.post('/addPurchaseApi', function (req, res) {
   // update Purchase
-  if (req.body.id !== "") {
+  if (req.body.id !== "''") {
     let querie = "UPDATE purchase set account_id='" + req.body.account_id + "',quantity='" + req.body.quantity + "',total_price='" + req.body.price * req.body.quantity + "',date='" + req.body.date + "', updated_at='" + Helper.yyyymmdd() + "'    where id = " + req.body.id + "";
     connection.query(querie, function (error, upres) {
       if (upres) {
