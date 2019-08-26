@@ -5,7 +5,7 @@ var connection = mysql.createConnection({
     port : '3306',
     user: 'admin',
     password: 'o2soft1234',
-    database: 'dmsdb'
+    database: 'dairy_milk_system'
   });
 
 connection.connect(function (err) {
