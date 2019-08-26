@@ -785,51 +785,28 @@ router.get('/getPurchaseReportAccountDailyApi/:userId/:parent_id/:date', functio
     where = "WHERE account.parent_id = " + req.params.userId;
   }
 
-  let querieCount = "SELECT account.name, account.phone, DATE_FORMAT(purchase.date, '%Y-%m-%d') as date,  sum(purchase.quantity) as total_quantity, sum(purchase.total_price) as total_price FROM account LEFT JOIN purchase ON account.id = purchase.account_id  AND purchase.date = '" + req.params.date + "' " + where + " Group By account.id";
-  let querieData = "SELECT account.name, account.phone, DATE_FORMAT(purchase.date, '%Y-%m-%d') as date,  sum(purchase.quantity) as total_quantity, sum(purchase.total_price) as total_price FROM account LEFT JOIN purchase ON account.id = purchase.account_id  AND purchase.date = '" + req.params.date + "' " + where + " Group By account.id ORDER BY purchase.date DESC";
-
-  getPurchaseReportAccountCount(querieCount, function (count) {
-    if (count > 0) {
-      connection.query(querieData, function (error, purchase) {
-        if (purchase) {
-          if (purchase.length > 0) {
-            var resp = ({
-              error: false,
-              message: 'success.',
-              result: {
-                count: count,
-                data: purchase
-              }
-            });
-            res.json(resp);
-          } else {
-            var resp = ({
-              error: false,
-              message: 'data not found2.',
-              result: {
-                count: 0,
-                data: []
-              }
-            });
-            res.json(resp);
-          }
-        } else {
-          var resp = ({
-            error: false,
-            message: 'data not found2.',
-            result: {
-              count: 0,
-              data: []
-            }
-          });
-          res.json(resp);
-        }
-
-      })
+  let querieData = "SELECT account.name, account.phone, DATE_FORMAT(purchase.date, '%Y-%m-%d') as date,  sum(purchase.quantity) as quantity, sum(purchase.total_price) as total_price FROM account LEFT JOIN purchase ON account.id = purchase.account_id  AND purchase.date = '" + req.params.date + "' " + where + " Group By account.id ORDER BY purchase.date DESC";
+  connection.query(querieData, function (error, purchase) {
+    if (purchase) {
+      if (purchase.length > 0) {
+        var resp = ({
+          error: false,
+          message: 'success.',
+          result: purchase
+        });
+        res.json(resp);
+      } else {
+        var resp = ({
+          error: false,
+          message: 'data not found2.',
+          result: []
+        });
+        res.json(resp);
+      }
     } else {
       var resp = ({
         error: false,
-        message: 'data not found1.',
+        message: 'data not found2.',
         result: {
           count: 0,
           data: []
