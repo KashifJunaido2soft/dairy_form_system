@@ -174,6 +174,8 @@ router.post('/updatePurchase', function (req, res) {
 
 // get all purchases
 router.get('/allPurchase/:userId/:parent_id', function (req, res) {
+  console.log("here")
+  console.log(req.params)
   var where = "";
   if (req.params.parent_id != 0) {
     where = "where purchase.userId = " + req.params.userId + "";
