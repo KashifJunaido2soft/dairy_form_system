@@ -191,6 +191,7 @@ router.get('/allPurchase/:userId/:parent_id', function (req, res) {
           message: 'success.',
           result: purchase
         });
+        console.log(resp)
         res.json(resp);
       } else {
         var resp = ({
@@ -198,6 +199,7 @@ router.get('/allPurchase/:userId/:parent_id', function (req, res) {
           message: 'not found.',
           result: []
         });
+        console.log(resp)
         res.json(resp);
       }
     } else {
@@ -206,6 +208,7 @@ router.get('/allPurchase/:userId/:parent_id', function (req, res) {
         message: 'not found.',
         result: []
       });
+      console.log("not found 2")
       res.json(resp);
     }
 
