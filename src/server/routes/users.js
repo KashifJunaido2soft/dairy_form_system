@@ -342,8 +342,7 @@ router.post('/updateUserPassword', function (req, res) {
 
 // update price from profile
 router.post('/updatePrice', function (req, res) {
-
-  let querie = "UPDATE admin_config set price='" + req.body.price + "' where parent_id = " + req.body.id + "";
+  let querie = "UPDATE admin_config set price='" + req.body.price + "', sale_price='" + req.body.salePrice + "' where parent_id = " + req.body.id + "";
   connection.query(querie, function (error, upres) {
     if (upres.affectedRows > 0) {
       let querie2 = "SELECT * FROM admin_config  where parent_id = " + req.body.id + "";

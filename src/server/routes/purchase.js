@@ -174,8 +174,6 @@ router.post('/updatePurchase', function (req, res) {
 
 // get all purchases
 router.get('/allPurchase/:userId/:parent_id', function (req, res) {
-  console.log("here")
-  console.log(req.params)
   var where = "";
   if (req.params.parent_id != 0) {
     where = "where purchase.userId = " + req.params.userId + "";
@@ -191,7 +189,6 @@ router.get('/allPurchase/:userId/:parent_id', function (req, res) {
           message: 'success.',
           result: purchase
         });
-        console.log(resp)
         res.json(resp);
       } else {
         var resp = ({
@@ -199,7 +196,6 @@ router.get('/allPurchase/:userId/:parent_id', function (req, res) {
           message: 'not found.',
           result: []
         });
-        console.log(resp)
         res.json(resp);
       }
     } else {
@@ -208,7 +204,6 @@ router.get('/allPurchase/:userId/:parent_id', function (req, res) {
         message: 'not found.',
         result: []
       });
-      console.log("not found 2")
       res.json(resp);
     }
 
