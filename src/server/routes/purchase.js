@@ -87,12 +87,13 @@ const getConfigPrice = (req, callback) => {
   });
 }
 
+
 /////////////// routes ////////////////
 
 // new/edit purchase entry
 router.post('/updatePurchase', function (req, res) {
   if (req.body.id !== "") {
-    let querie = "UPDATE purchase set account_id='" + req.body.account_id.id + "',item_type='" + req.body.item_type + "',quantity='" + req.body.quantity + "',total_price='" + req.body.price * req.body.quantity + "',date='" + req.body.date + "', updated_at='" + Helper.yyyymmdd() + "'    where id = " + req.body.id + "";
+    let querie = "UPDATE purchase set account_id='" + req.body.account_id.id + "',item_type='" + req.body.item_type + "',quantity='" + req.body.quantity + "', price='" + req.body.price + "', total_price='" + req.body.price * req.body.quantity + "',date='" + req.body.date + "', updated_at='" + Helper.yyyymmdd() + "'    where id = " + req.body.id + "";
     connection.query(querie, function (error, upres) {
       if (upres) {
         if (upres.affectedRows > 0) {
@@ -114,7 +115,7 @@ router.post('/updatePurchase', function (req, res) {
   } else {
     // insert Purchase
     getInvoiceNo(req.body.userId, function (invoiceNo) {
-      if (req.body.price !== "" && req.body.price !== 0) {
+      if (req.body.price !== "" && req.body.price !== 0 && req.body.price !== null) {
         insertPurchase(req, invoiceNo, req.body.price, function (insertedData) {
           if (insertedData) {
             if (insertedData.affectedRows > 0) {
@@ -755,26 +756,26 @@ router.post('/addPurchaseApi', function (req, res) {
 
 router.post('/updatePurchaseApi', function (req, res) {
   // update Purchase
-    let querie = "UPDATE purchase set account_id='" + req.body.account_id + "',quantity='" + req.body.quantity + "',total_price='" + req.body.price * req.body.quantity + "',date='" + req.body.date + "', updated_at='" + Helper.yyyymmdd() + "'    where id = " + req.body.id + "";
-    connection.query(querie, function (error, upres) {
-      if (upres) {
-        if (upres.affectedRows > 0) {
-          var resp = ({
-            error: false,
-            message: 'success'
-          });
-          res.json(resp);
-        }
-      } else {
+  let querie = "UPDATE purchase set account_id='" + req.body.account_id + "',quantity='" + req.body.quantity + "',total_price='" + req.body.price * req.body.quantity + "',date='" + req.body.date + "', updated_at='" + Helper.yyyymmdd() + "'    where id = " + req.body.id + "";
+  connection.query(querie, function (error, upres) {
+    if (upres) {
+      if (upres.affectedRows > 0) {
         var resp = ({
-          error: true,
-          message: 'not update'
+          error: false,
+          message: 'success'
         });
         res.json(resp);
       }
+    } else {
+      var resp = ({
+        error: true,
+        message: 'not update'
+      });
+      res.json(resp);
+    }
 
 
-    })
+  })
   //-------------------------------------------
 });
 

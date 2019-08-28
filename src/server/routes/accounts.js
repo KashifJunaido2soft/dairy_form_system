@@ -314,6 +314,48 @@ router.get('/allActiveAccounts/:userId/:parent_id', function (req, res) {
 
 
 
+//////////////////// Mobile apis /////////////////
+
+
+router.post('/NewAccountApi', upload.single('avatar'), function (req, res) {
+
+  if (req.body.avatar == undefined || req.body.avatar == "") {
+    var img = "";
+  }
+  if (req.file) {
+    img = req.file.filename;
+  }
+  //   // insert Account
+  let querie = "SELECT * FROM account where phone =" + req.body.phone + " ";
+  connection.query(querie, function (error, account) {
+    if (account.length > 0) {
+      var resp = ({
+        error: true,
+        message: 'Phone Already Exist.'
+      });
+      res.json(resp);
+    } else {
+      let insertData = 'INSERT INTO account (parent_id, name, avatar, phone, address, active, created_at) VALUES (' + req.body.userId + ', "' + req.body.name + '", "' + img + '",  ' + req.body.phone + ', "' + req.body.address + '",  "' + req.body.active + '",  "' + Helper.yyyymmdd() + '")';
+      connection.query(insertData, function (error, accountRes) {
+        if (accountRes.insertId > 0) {
+          var resp = ({
+            error: false,
+            message: 'success.'
+          });
+          res.json(resp);
+        } else {
+          var resp = ({
+            error: true,
+            message: 'not inserted.'
+          });
+          res.json(resp);
+        }
+      });
+    }
+  })
+});
+
+
 
 // For mongoose
 // router.post('/updateUserDataActive', function (req, res) {
