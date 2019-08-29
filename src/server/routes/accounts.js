@@ -318,7 +318,7 @@ router.get('/allActiveAccounts/:userId/:parent_id', function (req, res) {
 
 
 router.post('/NewAccountApi', upload.single('avatar'), function (req, res) {
-
+  console.log(req.body)
   if (req.body.avatar == undefined || req.body.avatar == "") {
     var img = "";
   }
