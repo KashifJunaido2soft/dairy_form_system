@@ -325,6 +325,8 @@ router.post('/NewAccountApi', upload.single('avatar'), function (req, res) {
   if (req.file) {
     img = req.file.filename;
   }
+  console.log(req.file)
+  console.log(img)
   //   // insert Account
   let querie = "SELECT * FROM account where phone =" + req.body.phone + " ";
   connection.query(querie, function (error, account) {
