@@ -2,6 +2,7 @@ const authApi = require('./src/server/routes/auth');
 const adminApi = require('./src/server/routes/admin');
 const userApi = require('./src/server/routes/users');
 const accountsApi = require('./src/server/routes/accounts');
+const companyApi = require('./src/server/routes/company');
 const saleApi = require('./src/server/routes/sale');
 const purchaseApi = require('./src/server/routes/purchase');
 const configApi = require('./src/server/routes/config');
@@ -66,8 +67,9 @@ app.use('/api/admin', adminApi);
 app.use('/api/config', configApi);
 app.use('/api/users', userApi);
 app.use('/api/accounts', accountsApi);
+app.use('/api/company', companyApi);
 app.use('/api/purchase', purchaseApi);
 app.use('/api/sale', saleApi);
 app.listen(port, function () {
-  console.log("server running on localhost: " + port);
+  console.log("server running on 192.18.0.104: " + port);
 });

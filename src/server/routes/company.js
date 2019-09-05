@@ -10,7 +10,7 @@ const Helper = require('../helper/helper');
 var storage = multer.diskStorage({
   destination: function (req, file, cb) {
     // cb(null, 'src/assets/images/accounts');
-    cb(null, 'uploads/accounts/');
+    cb(null, 'uploads/company/');
   },
   filename: function (req, file, cb) {
     var typ = file.mimetype.split("/");
@@ -26,7 +26,7 @@ var upload = multer({ storage: storage });
 /////////////// routes ////////////////
 
 // new/edit accounts entry
-router.post('/updateAccount', upload.single('avatar'), function (req, res) {
+router.post('/updateCompany', upload.single('avatar'), function (req, res) {
 
   var img = req.body.avatar;
 
@@ -43,11 +43,11 @@ router.post('/updateAccount', upload.single('avatar'), function (req, res) {
           if (req.file) {
             if (req.body.file != "") {
               // Check File Exit
-              fs.stat('uploads/accounts/' + req.body.file, function (err, stats) {
+              fs.stat('uploads/company/' + req.body.file, function (err, stats) {
                 //here we got all information of file in stats variable
                 if (stats) {
                   // If  File Exit then Remove File
-                  fs.unlink('uploads/accounts/' + req.body.file, (err) => {
+                  fs.unlink('uploads/company/' + req.body.file, (err) => {
                     if (err) throw err;
                     // console.log('successfully deleted /tmp/hello');
                   });
@@ -61,7 +61,7 @@ router.post('/updateAccount', upload.single('avatar'), function (req, res) {
               });
             }
           }
-          let querie = "UPDATE account set name='" + req.body.name + "',avatar='" + img + "', phone='" + req.body.phone + "', price='" + req.body.price + "', address='" + req.body.address + "',active='" + req.body.active + "', updated_at='" + Helper.yyyymmdd() + "'    where id = " + req.body.id + "";
+          let querie = "UPDATE company set name='" + req.body.name + "',avatar='" + img + "', phone='" + req.body.phone + "', price='" + req.body.price + "', address='" + req.body.address + "',active='" + req.body.active + "', updated_at='" + Helper.yyyymmdd() + "'    where id = " + req.body.id + "";
           connection.query(querie, function (error, upres) {
             if (upres.affectedRows > 0) {
               var resp = ({
@@ -85,11 +85,11 @@ router.post('/updateAccount', upload.single('avatar'), function (req, res) {
         if (req.file) {
           if (req.body.file != "") {
             // Check File Exit
-            fs.stat('uploads/accounts/' + req.body.file, function (err, stats) {
+            fs.stat('uploads/company/' + req.body.file, function (err, stats) {
               //here we got all information of file in stats variable
               if (stats) {
                 // If  File Exit then Remove File
-                fs.unlink('uploads/accounts/' + req.body.file, (err) => {
+                fs.unlink('uploads/company/' + req.body.file, (err) => {
                   if (err) throw err;
                   // console.log('successfully deleted /tmp/hello');
                 });
@@ -104,7 +104,7 @@ router.post('/updateAccount', upload.single('avatar'), function (req, res) {
           }
         }
 
-        let querie = "UPDATE account set name='" + req.body.name + "', avatar='" + img + "', phone='" + req.body.phone + "', price='" + req.body.price + "', address='" + req.body.address + "',active='" + req.body.active + "', updated_at='" + Helper.yyyymmdd() + "'    where id = " + req.body.id + "";
+        let querie = "UPDATE company set name='" + req.body.name + "', avatar='" + img + "', phone='" + req.body.phone + "', price='" + req.body.price + "', address='" + req.body.address + "',active='" + req.body.active + "', updated_at='" + Helper.yyyymmdd() + "'    where id = " + req.body.id + "";
         connection.query(querie, function (error, upres) {
           if (upres.affectedRows > 0) {
             var resp = ({
@@ -121,7 +121,7 @@ router.post('/updateAccount', upload.single('avatar'), function (req, res) {
   } else {
 
     //   // insert Account
-    let querie = "SELECT * FROM account where phone =" + req.body.phone + " ";
+    let querie = "SELECT * FROM company where phone =" + req.body.phone + " ";
     connection.query(querie, function (error, account) {
 
       if (account.length > 0) {
@@ -133,7 +133,7 @@ router.post('/updateAccount', upload.single('avatar'), function (req, res) {
         res.json(resp);
 
       } else {
-        let insertData = 'INSERT INTO account (parent_id, name, avatar, phone, price, address, active, created_at) VALUES (' + req.body.parent_id + ', "' + req.body.name + '", "' + img + '",  ' + req.body.phone + ', ' + req.body.price + ', "' + req.body.address + '",  "' + req.body.active + '",  "' + Helper.yyyymmdd() + '")';
+        let insertData = 'INSERT INTO company (parent_id, name, avatar, phone, price, address, active, created_at) VALUES (' + req.body.parent_id + ', "' + req.body.name + '", "' + img + '",  ' + req.body.phone + ', ' + req.body.price + ', "' + req.body.address + '",  "' + req.body.active + '",  "' + Helper.yyyymmdd() + '")';
         connection.query(insertData, function (error, accountRes) {
           if (accountRes.insertId > 0) {
             var resp = ({
@@ -156,14 +156,9 @@ router.post('/updateAccount', upload.single('avatar'), function (req, res) {
 });
 
 // get all accounts for listing
-router.get('/allAccounts/:userId/:parent_id', function (req, res) {
+router.get('/allCompanies/:userId', function (req, res) {
 
-  var where = "";
-  if (req.params.parent_id !== '0') {
-    where = "where parent_id = " + req.params.userId + "";
-  }
-
-  let querie = "SELECT * FROM account " + where + " Order By id DESC";
+  let querie = "SELECT * FROM company where parent_id = " + req.params.userId + " Order By id DESC";
   connection.query(querie, function (error, users) {
     if (users.length > 0) {
       var resp = ({
@@ -184,14 +179,14 @@ router.get('/allAccounts/:userId/:parent_id', function (req, res) {
 })
 
 // active/inactive accounts
-router.post('/updateUserDataActive', function (req, res) {
+router.post('/updateCompanyDataActive', function (req, res) {
   var is_active = false;
   if (req.body.active === 'true') {
     is_active = false;
   } else {
     is_active = true;
   }
-  let querie = "UPDATE account set active='" + is_active + "' where id = " + req.body.id + "";
+  let querie = "UPDATE company set active='" + is_active + "' where id = " + req.body.id + "";
   connection.query(querie, function (error, upres) {
     if (upres.affectedRows > 0) {
       var resp = ({
@@ -207,11 +202,11 @@ router.post('/updateUserDataActive', function (req, res) {
 router.post('/deleteOneUser', function (req, res) {
   if (req.body.file != "") {
     // Check File Exit
-    fs.stat('uploads/accounts/' + req.body.file, function (err, stats) {
+    fs.stat('uploads/company/' + req.body.file, function (err, stats) {
       //here we got all information of file in stats variable
       if (stats) {
         // If  File Exit then Remove File
-        fs.unlink('uploads/accounts/' + req.body.file, (err) => {
+        fs.unlink('uploads/company/' + req.body.file, (err) => {
           if (err) throw err;
           // console.log('successfully deleted /tmp/hello');
         });
@@ -223,7 +218,7 @@ router.post('/deleteOneUser', function (req, res) {
 
     });
   }
-  let querie = "DELETE FROM account  where id = " + req.body.id + "";
+  let querie = "DELETE FROM company  where id = " + req.body.id + "";
   connection.query(querie, function (error, upres) {
     if (upres.affectedRows > 0) {
       var resp = ({
@@ -248,11 +243,11 @@ router.post('/deleteManyUser', function (req, res) {
   req.body.forEach(element => {
     ids.push(element.id);
     if (element.file != "") {
-      fs.stat('uploads/accounts/' + element.file, function (err, stats) {
+      fs.stat('uploads/company/' + element.file, function (err, stats) {
         //here we got all information of file in stats variable
         if (stats) {
           // If  File Exit then Remove File
-          fs.unlink('uploads/accounts/' + element.file, (err) => {
+          fs.unlink('uploads/company/' + element.file, (err) => {
             if (err) throw err;
             // console.log('successfully deleted /tmp/hello');
           });
@@ -265,7 +260,7 @@ router.post('/deleteManyUser', function (req, res) {
       });
     }
   });
-  let querie = "DELETE FROM account  where id IN (" + ids + ")";
+  let querie = "DELETE FROM company  where id IN (" + ids + ")";
   connection.query(querie, function (error, upres) {
     if (upres.affectedRows > 0) {
       var resp = ({
@@ -284,13 +279,10 @@ router.post('/deleteManyUser', function (req, res) {
 })
 
 // get all active account for new purchase form
-router.get('/allActiveAccounts/:userId/:parent_id', function (req, res) {
+router.get('/allActiveCompanies/:userId', function (req, res) {
 
-  var where = "where active='true'";
-  if (req.params.parent_id !== '0') {
-    where = "where parent_id = " + req.params.userId + " and active='true'";
-  }
-  let querie = "SELECT * FROM account " + where + " Order By id DESC";
+
+  let querie = "SELECT * FROM company where parent_id = " + req.params.userId + " and active='true' Order By id DESC";
   connection.query(querie, function (error, users) {
     if (users.length > 0) {
       var resp = ({
@@ -315,50 +307,6 @@ router.get('/allActiveAccounts/:userId/:parent_id', function (req, res) {
 
 
 //////////////////// Mobile apis /////////////////
-
-
-router.post('/NewAccountApi', upload.single('avatar'), function (req, res) {
-  // console.log(req.body);
-  if (req.body.avatar == undefined || req.body.avatar == "") {
-    var img = "";
-  }
-  if (req.file) {
-    img = req.file.filename;
-  }
-  // console.log(img);
-  // console.log(req.file);
-  //   // insert Account
-  let querie = "SELECT * FROM account where phone =" + req.body.phone + " ";
-  connection.query(querie, function (error, account) {
-    if (account.length > 0) {
-      var resp = ({
-        error: true,
-        message: 'Phone Already Exist.'
-      });
-      // console.log(resp);
-      res.json(resp);
-    } else {
-      let insertData = 'INSERT INTO account (parent_id, name, avatar, phone, price, address, active, created_at) VALUES (' + req.body.userId + ', "' + req.body.name + '", "' + img + '",  ' + req.body.phone + ', ' + req.body.price + ', "' + req.body.address + '",  "' + req.body.active + '",  "' + Helper.yyyymmdd() + '")';
-      connection.query(insertData, function (error, accountRes) {
-        if (accountRes.insertId > 0) {
-          var resp = ({
-            error: false,
-            message: 'success.'
-          });
-          // console.log(resp);
-          res.json(resp);
-        } else {
-          var resp = ({
-            error: true,
-            message: 'not inserted.'
-          });
-          // console.log(resp);
-          res.json(resp);
-        }
-      });
-    }
-  })
-});
 
 
 

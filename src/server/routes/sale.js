@@ -37,7 +37,7 @@ const getPurchaseReportAccountCount = (query, callback) => {
 
 
 // // insert purchase
-const insertPurchase = (req, invouceNo, price, callback) => {
+const insertSales = (req, invouceNo, price, callback) => {
   var parent_id;
   if (req.body.parent_id != 0) {
     parent_id = req.body.parent_id;
@@ -45,7 +45,7 @@ const insertPurchase = (req, invouceNo, price, callback) => {
     parent_id = req.body.userId;
   }
 
-  let insertData = 'INSERT INTO sales (parent_id, userId, price, quantity, total_price, invoice_no, date, created_at) VALUES (' + parent_id + ', ' + req.body.userId + ', ' + price + ',  ' + req.body.quantity + ', ' + price * req.body.quantity + ',  "' + invouceNo + '", "' + req.body.date + '",  "' + Helper.yyyymmdd() + '")';
+  let insertData = 'INSERT INTO sales (parent_id, userId, company_id, price, quantity, total_price, invoice_no, date, created_at) VALUES (' + parent_id + ', ' + req.body.userId + ', ' + req.body.company_id.id + ',' + price + ',  ' + req.body.quantity + ', ' + price * req.body.quantity + ',  "' + invouceNo + '", "' + req.body.date + '",  "' + Helper.yyyymmdd() + '")';
   connection.query(insertData, function (error, insertedResponse) {
     return callback(insertedResponse);
   });
@@ -92,7 +92,7 @@ const insertPurchase = (req, invouceNo, price, callback) => {
 router.post('/updateSale', function (req, res) {
 
   if (req.body.id !== "") {
-    let querie = "UPDATE sales set quantity='" + req.body.quantity + "',total_price='" + req.body.price * req.body.quantity + "', date='" + req.body.date + "', updated_at='" + Helper.yyyymmdd() + "' where id = " + req.body.id + "";
+    let querie = "UPDATE sales set company_id='" + req.body.company_id.id + "', quantity='" + req.body.quantity + "' , price='" + req.body.price + "', total_price='" + req.body.price * req.body.quantity + "', date='" + req.body.date + "', updated_at='" + Helper.yyyymmdd() + "' where id = " + req.body.id + "";
     connection.query(querie, function (error, upres) {
       if (upres) {
         if (upres.affectedRows > 0) {
@@ -114,7 +114,7 @@ router.post('/updateSale', function (req, res) {
   } else {
     // insert Sale
     getInvoiceNo(req.body.userId, function (invoiceNo) {
-      insertPurchase(req, invoiceNo, req.body.price, function (insertedData) {
+      insertSales(req, invoiceNo, req.body.price, function (insertedData) {
         if (insertedData) {
           if (insertedData.affectedRows > 0) {
             var resp = ({
@@ -185,43 +185,48 @@ router.post('/updateSale', function (req, res) {
 router.get('/allSales/:userId/:parent_id/:sort/:column/:limit/:offset/:search', function (req, res) {
   var search = "";
   if (req.params.search != 'null') {
-    search = " AND ( price LIKE '%" + req.params.search +
-      "%'  OR quantity LIKE '%" + req.params.search +
-      "%'  OR total_price  LIKE '%" + req.params.search +
-      "%'  OR invoice_no LIKE '%" + req.params.search +
-      "%'  OR date LIKE '%" + req.params.search + "%') ";
+    search = " AND ( sales.price LIKE '%" + req.params.search +
+      "%'  OR sales.quantity LIKE '%" + req.params.search +
+      "%'  OR sales.total_price  LIKE '%" + req.params.search +
+      "%'  OR sales.invoice_no LIKE '%" + req.params.search +
+      "%'  OR sales.date LIKE '%" + req.params.search +
+      "%'  OR company.phone LIKE '%" + req.params.search +
+      "%'  OR company.name LIKE '%" + req.params.search + "%') ";
   }
   var orderBycolumn = "";
   if (req.params.sort != 'null') {
     switch (req.params.column) {
       case 'id':
-        orderBycolumn = 'Order By id ' + req.params.sort;
+        orderBycolumn = 'Order By sales.id ' + req.params.sort;
         break;
       case 'date':
-        orderBycolumn = 'Order By date ' + req.params.sort;
+        orderBycolumn = 'Order By sales.date ' + req.params.sort;
         break;
       case 'invoice':
-        orderBycolumn = 'Order By invoice_no ' + req.params.sort;
+        orderBycolumn = 'Order By sales.invoice_no ' + req.params.sort;
+        break;
+      case 'company':
+        orderBycolumn = 'Order By company.phone ' + req.params.sort;
         break;
       case 'quantity':
-        orderBycolumn = 'Order By quantity ' + req.params.sort;
+        orderBycolumn = 'Order By sales.quantity ' + req.params.sort;
         break;
       case 'price':
-        orderBycolumn = 'Order By price ' + req.params.sort;
+        orderBycolumn = 'Order By sales.price ' + req.params.sort;
         break;
       case 'total_price':
-        orderBycolumn = 'Order By total_price ' + req.params.sort;
+        orderBycolumn = 'Order By sales.total_price ' + req.params.sort;
         break;
     }
   }
   var where = "";
   if (req.params.parent_id != 0) {
-    where = "where userId = " + req.params.userId + "";
+    where = "where sales.userId = " + req.params.userId + "";
   } else {
-    where = "where parent_id = " + req.params.userId + "";
+    where = "where sales.parent_id = " + req.params.userId + "";
   }
-  let querieData = "SELECT *  FROM sales " + where + search + " " + orderBycolumn + " " + " LIMIT " + req.params.limit + " OFFSET " + req.params.offset + "";
-  let querieCount = "SELECT *  FROM sales " + where + search + "";
+  let querieData = "SELECT sales.*, company.name, company.phone, company.avatar  FROM sales LEFT JOIN company ON sales.company_id = company.id " + where + search + " " + orderBycolumn + " " + " LIMIT " + req.params.limit + " OFFSET " + req.params.offset + "";
+  let querieCount = "SELECT sales.*, company.name, company.phone, company.avatar  FROM sales LEFT JOIN company ON sales.company_id = company.id " + where + search + "";
   getPurchaseReportAccountCount(querieCount, function (count) {
     if (count > 0) {
       connection.query(querieData, function (error, sales) {
@@ -495,20 +500,121 @@ router.get('/getAvailableQty/:userId/:date', function (req, res) {
 //   })
 
 // })
+
+router.get('/getSaleReportCompanyWise/:userId/:company_id/:startDate/:endDate/:groupBy/:sortDirection/:column/:pageSize/:offset', function (req, res) {
+  // console.log(req.params);
+  var dateFormat = 'DATE_FORMAT(sales.date, "%Y-%m-%d")';
+  var selectDte = 'DATE_FORMAT(sales.date, "%d %b, %Y") as date';
+  switch (req.params.groupBy) {
+    case '1': //for days
+      selectDte = 'DATE_FORMAT(sales.date, "%d %b, %Y") as date';
+      dateFormat = "DATE_FORMAT(sales.date, '%Y-%m-%d')";
+      break;
+    case '2': //for months
+      selectDte = 'DATE_FORMAT(sales.date, "%b, %Y") as date';
+      dateFormat = "DATE_FORMAT(sales.date, '%Y-%m')";
+      break;
+    case '3': //for years
+      selectDte = 'DATE_FORMAT(sales.date, "%Y") as date';
+      dateFormat = "DATE_FORMAT(sales.date, '%Y')";
+      break;
+
+  }
+  var orderBycolumn = "";
+  if (req.params.sortDirection != 'null') {
+    switch (req.params.column) {
+      case 'date':
+        orderBycolumn = 'Order By sales.date ' + req.params.sortDirection;
+        break;
+      case 'company':
+        orderBycolumn = 'Order By company.phone ' + req.params.sortDirection;
+        break;
+    }
+  }
+
+  var where = "where sales.parent_id = " + req.params.userId;
+  var where2 = " AND sales.date >= '" + req.params.startDate + "' AND sales.date <= '" + req.params.endDate + "'";
+  var where3 = '';
+  if (req.params.company_id != '0' && req.params.company_id != 'All') {
+    where3 = " AND sales.company_id= '" + req.params.company_id + "'";
+  }
+
+  var select = selectDte + ", sum(sales.quantity) as total_quantity, sum(sales.total_price) as total_price, company.name, company.phone, company.avatar";
+
+  var limitOffset = " LIMIT " + req.params.pageSize + " OFFSET " + req.params.offset;
+  let querieCount = "SELECT " + select + " FROM sales LEFT JOIN company ON sales.company_id = company.id " + where + where2 + where3 + " Group By " + dateFormat + ", sales.company_id";
+  let querieData = "SELECT " + select + " FROM sales LEFT JOIN company ON sales.company_id = company.id " + where + where2 + where3 + " Group By " + dateFormat + ", sales.company_id " + orderBycolumn + " " + limitOffset + "";
+
+  // console.log(querieData);
+  // console.log(querieCount);
+  getPurchaseReportAccountCount(querieCount, function (count) {
+    if (count > 0) {
+      connection.query(querieData, function (error, purchase) {
+        if (purchase) {
+          if (purchase.length > 0) {
+            var resp = ({
+              error: false,
+              message: 'success.',
+              result: {
+                count: count,
+                data: purchase
+              }
+            });
+            res.json(resp);
+          } else {
+            var resp = ({
+              error: false,
+              message: 'data not found2.',
+              result: {
+                count: 0,
+                data: []
+              }
+            });
+            res.json(resp);
+          }
+        } else {
+          var resp = ({
+            error: false,
+            message: 'data not found2.',
+            result: {
+              count: 0,
+              data: []
+            }
+          });
+          res.json(resp);
+        }
+
+      })
+    } else {
+      var resp = ({
+        error: false,
+        message: 'data not found1.',
+        result: {
+          count: 0,
+          data: []
+        }
+      });
+      res.json(resp);
+    }
+
+  })
+
+})
+
 // report Sale 
 router.get('/getSaleReportDateWise/:userId/:startDate/:endDate/:groupBy/:sortDirection/:column/:pageSize/:offset', function (req, res) {
   // console.log(req.params);
   var dateFormat = 'DATE_FORMAT(purchase.date, "%Y-%m-%d")';
   var dateFormatsales = 'DATE_FORMAT(sales.date, "%Y-%m-%d")';
-  var selectDte = 'DATE_FORMAT(purchase.date, "%d %M, %Y") as date';
+  var selectDte = 'DATE_FORMAT(purchase.date, "%d %b, %Y") as date';
   switch (req.params.groupBy) {
     case '1': //for days
-      selectDte = 'DATE_FORMAT(purchase.date, "%d %M, %Y") as date';
+      selectDte = 'DATE_FORMAT(purchase.date, "%d %b, %Y") as date';
       dateFormat = "DATE_FORMAT(purchase.date, '%Y-%m-%d')";
       dateFormatsales = "DATE_FORMAT(sales.date, '%Y-%m-%d')";
       break;
     case '2': //for months
-      selectDte = 'DATE_FORMAT(purchase.date, "%M, %Y") as date';
+      selectDte = 'DATE_FORMAT(purchase.date, "%b, %Y") as date';
       dateFormat = "DATE_FORMAT(purchase.date, '%Y-%m')";
       dateFormatsales = "DATE_FORMAT(sales.date, '%Y-%m')";
       break;
@@ -532,7 +638,7 @@ router.get('/getSaleReportDateWise/:userId/:startDate/:endDate/:groupBy/:sortDir
   var where2 = " AND purchase.date >= '" + req.params.startDate + "' AND purchase.date <= '" + req.params.endDate + "'";
   var where3 = " where sales.date >= '" + req.params.startDate + "' AND sales.date <= '" + req.params.endDate + "'";
 
-  var select = selectDte + ", IFNULL(sum(purchase.quantity),0) as total_purchase, IFNULL((sales.total_sales), 0) as total_sales, IFNULL(AVG(purchase.price),0) as total_expense, sales.sale_date";
+  var select = selectDte + ", IFNULL(sum(purchase.quantity),0) as total_purchase, IFNULL((sales.total_sales), 0) as total_sales, IFNULL( (SUM(purchase.total_price) / SUM(purchase.quantity)), 0)  as total_expense, sales.sale_date";
 
   var limitOffset = " LIMIT " + req.params.pageSize + " OFFSET " + req.params.offset;
   let querieCount = "SELECT " + select + " FROM purchase LEFT JOIN (SELECT DATE_FORMAT(sales.date, '%Y-%m-%d') as sale_date, sum(sales.quantity) as total_sales from sales " + where3 + " GROUP by " + dateFormatsales + ") as sales ON purchase.date = sales.sale_date " + where + where2 + " Group By " + dateFormat + "";

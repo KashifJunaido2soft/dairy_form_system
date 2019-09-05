@@ -39,11 +39,7 @@ const dateTime = new Date().toLocaleString('en-US', {
 
 // new/edit user entry
 router.post('/updateUser', upload.single('avatar'), function (req, res) {
-  // update user
-  var price = 0;
-  if (req.body.price !== "") {
-    price = req.body.price
-  }
+
   if (req.body.id !== "") {
     var img = req.body.avatar;
 
@@ -76,7 +72,7 @@ router.post('/updateUser', upload.single('avatar'), function (req, res) {
               });
             }
           }
-          let querie = "UPDATE admin set name='" + req.body.name + "',price='" + price + "',avatar='" + img + "', location='" + req.body.location + "',phone='" + req.body.phone + "', notes='" + req.body.notes + "',address='" + req.body.address + "',active='" + req.body.active + "'    where id = " + req.body.id + "";
+          let querie = "UPDATE admin set name='" + req.body.name + "',avatar='" + img + "', location='" + req.body.location + "',phone='" + req.body.phone + "', notes='" + req.body.notes + "',address='" + req.body.address + "',active='" + req.body.active + "'    where id = " + req.body.id + "";
           connection.query(querie, function (error, upres) {
             if (upres.affectedRows > 0) {
               var resp = ({
@@ -90,7 +86,6 @@ router.post('/updateUser', upload.single('avatar'), function (req, res) {
                   'name': req.body.name,
                   'active': req.body.active,
                   'phone': req.body.phone,
-                  'price': price,
                   'address': req.body.address,
                   'notes': req.body.notes
                 }
@@ -128,7 +123,7 @@ router.post('/updateUser', upload.single('avatar'), function (req, res) {
             });
           }
         }
-        let querie = "UPDATE admin set name='" + req.body.name + "',price='" + price + "',avatar='" + img + "', location='" + req.body.location + "',phone='" + req.body.phone + "', notes='" + req.body.notes + "',address='" + req.body.address + "',active='" + req.body.active + "'    where id = " + req.body.id + "";
+        let querie = "UPDATE admin set name='" + req.body.name + "', avatar='" + img + "', location='" + req.body.location + "',phone='" + req.body.phone + "', notes='" + req.body.notes + "',address='" + req.body.address + "',active='" + req.body.active + "'    where id = " + req.body.id + "";
         connection.query(querie, function (error, upres) {
           if (upres.affectedRows > 0) {
             var resp = ({
@@ -142,7 +137,6 @@ router.post('/updateUser', upload.single('avatar'), function (req, res) {
                 'name': req.body.name,
                 'active': req.body.active,
                 'phone': req.body.phone,
-                'price': price,
                 'address': req.body.address,
                 'notes': req.body.notes
               }
@@ -168,7 +162,7 @@ router.post('/updateUser', upload.single('avatar'), function (req, res) {
 
       } else {
 
-        let insertAdminData = 'INSERT INTO admin (parent_id, name, avatar, price, phone, notes, address, password, active, location, starred, created_at) VALUES (' + req.body.parent_id + ', "' + req.body.name + '", "", ' + req.body.price + ', ' + req.body.phone + ', "' + req.body.notes + '", "' + req.body.address + '", "' + bcrypt.hashSync(req.body.password, 10) + '", "' + req.body.active + '", "' + req.body.location + '", "' + req.body.starred + '", "' + Helper.yyyymmdd() + '")';
+        let insertAdminData = 'INSERT INTO admin (parent_id, name, avatar, phone, notes, address, password, active, location, starred, created_at) VALUES (' + req.body.parent_id + ', "' + req.body.name + '", "", ' + req.body.phone + ', "' + req.body.notes + '", "' + req.body.address + '", "' + bcrypt.hashSync(req.body.password, 10) + '", "' + req.body.active + '", "' + req.body.location + '", "' + req.body.starred + '", "' + Helper.yyyymmdd() + '")';
         connection.query(insertAdminData, function (error, adminRes) {
           if (adminRes.insertId > 0) {
             let insertAdminConfigData = 'INSERT INTO admin_config (parent_id, lang) VALUES (' + adminRes.insertId + ', "en")';
@@ -341,25 +335,25 @@ router.post('/updateUserPassword', function (req, res) {
 })
 
 // update price from profile
-router.post('/updatePrice', function (req, res) {
-  let querie = "UPDATE admin_config set price='" + req.body.price + "', sale_price='" + req.body.salePrice + "' where parent_id = " + req.body.id + "";
-  connection.query(querie, function (error, upres) {
-    if (upres.affectedRows > 0) {
-      let querie2 = "SELECT * FROM admin_config  where parent_id = " + req.body.id + "";
-      connection.query(querie2, function (error, selectResp) {
-        if (selectResp.length > 0) {
-          var resp = ({
-            error: false,
-            message: 'success',
-            result: selectResp[0]
-          });
-          res.json(resp);
-        }
-      })
-    }
+// router.post('/updatePrice', function (req, res) {
+//   let querie = "UPDATE admin_config set  sale_price='" + req.body.salePrice + "' where parent_id = " + req.body.id + "";
+//   connection.query(querie, function (error, upres) {
+//     if (upres.affectedRows > 0) {
+//       let querie2 = "SELECT * FROM admin_config  where parent_id = " + req.body.id + "";
+//       connection.query(querie2, function (error, selectResp) {
+//         if (selectResp.length > 0) {
+//           var resp = ({
+//             error: false,
+//             message: 'success',
+//             result: selectResp[0]
+//           });
+//           res.json(resp);
+//         }
+//       })
+//     }
 
-  })
-});
+//   })
+// });
 
 // get all active users
 router.get('/allActiveUsers/:userId', function (req, res) {
