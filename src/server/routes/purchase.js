@@ -391,7 +391,7 @@ router.get('/getPurchaseReportAccount/:userId/:parent_id/:accountId/:startDate/:
     where3 = " AND purchase.account_id= '" + req.params.accountId + "'";
   }
 
-  var select = selectDte + ", sum(purchase.quantity) as total_quantity, sum(purchase.total_price) as total_price, account.name, account.phone, account.avatar";
+  var select = selectDte + ", sum(purchase.quantity) as total_quantity, sum(purchase.total_price) as total_price,purchase.id, account.name, account.phone, account.avatar";
   var limitOffset = " LIMIT " + req.params.pageSize + " OFFSET " + req.params.offset;
   let querieCount = "SELECT " + select + " FROM purchase LEFT JOIN account ON purchase.account_id = account.id " + where + where2 + where3 + " Group By " + dateFormat + ", purchase.account_id";
   let querieData = "SELECT " + select + " FROM purchase LEFT JOIN account ON purchase.account_id = account.id " + where + where2 + where3 + " Group By " + dateFormat + ", purchase.account_id " + orderBycolumn + " " + limitOffset + "";
@@ -697,21 +697,14 @@ router.post('/addPurchaseApi', function (req, res) {
   // update Purchase
   getInvoiceNo(req.body.userId, function (invoiceNo) {
     // if (req.body.price !== "" && req.body.price !== '0' && req.body.price !== 0) {
-      insertPurchase1(req, invoiceNo, req.body.price, req.body.account_id, function (insertedData) {
-        if (insertedData) {
-          if (insertedData.affectedRows > 0) {
-            var resp = ({
-              error: false,
-              message: 'success.'
-            });
-            res.json(resp);
-          } else {
-            var resp = ({
-              error: false,
-              message: 'not insert.'
-            });
-            res.json(resp);
-          }
+    insertPurchase1(req, invoiceNo, req.body.price, req.body.account_id, function (insertedData) {
+      if (insertedData) {
+        if (insertedData.affectedRows > 0) {
+          var resp = ({
+            error: false,
+            message: 'success.'
+          });
+          res.json(resp);
         } else {
           var resp = ({
             error: false,
@@ -719,8 +712,15 @@ router.post('/addPurchaseApi', function (req, res) {
           });
           res.json(resp);
         }
+      } else {
+        var resp = ({
+          error: false,
+          message: 'not insert.'
+        });
+        res.json(resp);
+      }
 
-      });
+    });
     // } else {
     //   getConfigPrice(req, function (price) {
     //     insertPurchase1(req, invoiceNo, price, req.body.account_id, function (insertedData) {
