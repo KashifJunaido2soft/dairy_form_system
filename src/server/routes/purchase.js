@@ -466,7 +466,10 @@ router.get('/getPurchaseReportAccountDaily/:userId/:parent_id/:startDate/:sortDi
   }
   var where = "";
   if (req.params.parent_id != 0) {
-    where = "WHERE account.parent_id = " + req.params.userId;
+    where = "WHERE account.parent_id = " + req.params.userId + " And account.active = 'true'";
+  } else {
+    where = "WHERE account.active = 'true'";
+
   }
 
 
@@ -783,7 +786,10 @@ router.post('/updatePurchaseApi', function (req, res) {
 router.get('/getPurchaseReportAccountDailyApi/:userId/:parent_id/:date', function (req, res) {
   var where = "";
   if (req.params.parent_id != 0) {
-    where = "WHERE account.parent_id = " + req.params.userId;
+    where = "WHERE account.parent_id = " + req.params.userId + " And account.active = 'true'";
+  } else {
+    where = "WHERE account.active = 'true'";
+
   }
 
   let querieData = "SELECT account.name, account.phone,account.avatar, DATE_FORMAT(purchase.date, '%Y-%m-%d') as date,  sum(purchase.quantity) as quantity, sum(purchase.total_price) as total_price FROM account LEFT JOIN purchase ON account.id = purchase.account_id  AND purchase.date = '" + req.params.date + "' " + where + " Group By account.id ORDER BY purchase.date DESC";
