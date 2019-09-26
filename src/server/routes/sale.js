@@ -281,8 +281,9 @@ router.get('/allSales/:userId/:parent_id/:sort/:column/:limit/:offset/:search', 
 })
 
 router.get('/getAvailableQty/:userId/:date', function (req, res) {
-  let purchaseQuery = "select sum(quantity) as totalPQty from purchase where parent_id = '" + req.params.userId + "' And date = '" + req.params.date + "'";
-  let salesQuery = "select sum(quantity) as totalPQty from sales where parent_id = '" + req.params.userId + "' And date = '" + req.params.date + "'";
+  let purchaseQuery = "select ROUND(sum(quantity), 2) as totalPQty from purchase where parent_id = '" + req.params.userId + "' And date = '" + req.params.date + "'";
+  let salesQuery = "select ROUND(sum(quantity), 2) as totalPQty from sales where parent_id = '" + req.params.userId + "' And date = '" + req.params.date + "'";
+  
   connection.query(purchaseQuery, function (error, purchaseResp) {
     var purchase = 0;
     var balance = 0;
@@ -296,15 +297,16 @@ router.get('/getAvailableQty/:userId/:date', function (req, res) {
           var resp = ({
             error: false,
             message: 'success',
-            result: balance
+            result: parseFloat(balance).toFixed(1)
           });
           res.json(resp);
+          
         } else {
           balance = purchase - sales;
           var resp = ({
             error: false,
             message: 'success',
-            result: balance
+            result: parseFloat(balance).toFixed(1)
           });
           res.json(resp);
         }
@@ -314,7 +316,7 @@ router.get('/getAvailableQty/:userId/:date', function (req, res) {
       var resp = ({
         error: false,
         message: 'success',
-        result: balance
+        result: parseFloat(balance).toFixed(1)
       });
       res.json(resp);
     }
