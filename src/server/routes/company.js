@@ -35,7 +35,7 @@ router.post('/updateCompany', upload.single('avatar'), function (req, res) {
   }
   // update Account
   if (req.body.id !== "") {
-    let querie = "SELECT * FROM account where phone =" + req.body.phone + " ";
+    let querie = "SELECT * FROM company where phone =" + req.body.phone + " ";
     connection.query(querie, function (error, user) {
       if (user.length > 0) {
         if (user[0].id == req.body.id) {

@@ -37,6 +37,7 @@ router.post('/updateAccount', upload.single('avatar'), function (req, res) {
   if (req.body.id !== "") {
     let querie = "SELECT * FROM account where phone =" + req.body.phone + " ";
     connection.query(querie, function (error, user) {
+      
       if (user.length > 0) {
         if (user[0].id == req.body.id) {
 
@@ -335,7 +336,7 @@ router.post('/NewAccountApi', upload.single('avatar'), function (req, res) {
         error: true,
         message: 'Phone Already Exist.'
       });
-      // console.log(resp);
+      console.log(resp);
       res.json(resp);
     } else {
       let insertData = 'INSERT INTO account (parent_id, name, avatar, phone, price, address, active, created_at) VALUES (' + req.body.userId + ', "' + req.body.name + '", "' + img + '",  ' + req.body.phone + ', ' + req.body.price + ', "' + req.body.address + '",  "' + req.body.active + '",  "' + Helper.yyyymmdd() + '")';
@@ -345,14 +346,14 @@ router.post('/NewAccountApi', upload.single('avatar'), function (req, res) {
             error: false,
             message: 'success.'
           });
-          // console.log(resp);
+          console.log(resp);
           res.json(resp);
         } else {
           var resp = ({
             error: true,
             message: 'not inserted.'
           });
-          // console.log(resp);
+          console.log(resp);
           res.json(resp);
         }
       });

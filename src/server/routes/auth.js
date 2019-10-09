@@ -41,7 +41,7 @@ router.post('/login', function (req, res) {
         } else {
           var resp = ({
             error: true,
-            message: 'wrong password',
+            message: 'Wrong Password',
           });
           res.json(resp);
         }

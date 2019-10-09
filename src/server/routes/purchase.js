@@ -46,7 +46,7 @@ const insertPurchase = (req, invouceNo, price, callback) => {
     parent_id = req.body.userId;
   }
 
-  let insertData = 'INSERT INTO purchase (parent_id, userId, account_id, item_type, price, quantity, location, total_price, invoice_no, date, created_at) VALUES (' + parent_id + ', ' + req.body.userId + ',  ' + req.body.account_id.id + ', "' + req.body.item_type + '", ' + price + ',  ' + req.body.quantity + ',"' + req.body.location + '", ' + price * req.body.quantity + ',  "' + invouceNo + '", "' + req.body.date + '",  "' + Helper.yyyymmdd() + '")';
+  let insertData = 'INSERT INTO purchase (parent_id, userId, account_id, item_type,time_type, price, quantity, location, total_price, invoice_no, date, created_at) VALUES (' + parent_id + ', ' + req.body.userId + ',  ' + req.body.account_id.id + ', "' + req.body.item_type + '", "' + req.body.time_type + '", ' + price + ',  ' + req.body.quantity + ',"' + req.body.location + '", ' + price * req.body.quantity + ',  "' + invouceNo + '", "' + req.body.date + '",  "' + Helper.yyyymmdd() + '")';
   connection.query(insertData, function (error, insertedResponse) {
     return callback(insertedResponse);
   });
@@ -93,7 +93,7 @@ const getConfigPrice = (req, callback) => {
 // new/edit purchase entry
 router.post('/updatePurchase', function (req, res) {
   if (req.body.id !== "") {
-    let querie = "UPDATE purchase set account_id='" + req.body.account_id.id + "',item_type='" + req.body.item_type + "',quantity='" + req.body.quantity + "', price='" + req.body.price + "', total_price='" + req.body.price * req.body.quantity + "',date='" + req.body.date + "', updated_at='" + Helper.yyyymmdd() + "'    where id = " + req.body.id + "";
+    let querie = "UPDATE purchase set account_id='" + req.body.account_id.id + "',item_type='" + req.body.item_type + "', time_type='" + req.body.time_type + "', quantity='" + req.body.quantity + "', price='" + req.body.price + "', total_price='" + req.body.price * req.body.quantity + "',date='" + req.body.date + "', updated_at='" + Helper.yyyymmdd() + "'    where id = " + req.body.id + "";
     connection.query(querie, function (error, upres) {
       if (upres) {
         if (upres.affectedRows > 0) {
@@ -113,6 +113,7 @@ router.post('/updatePurchase', function (req, res) {
     })
 
   } else {
+
     // insert Purchase
     getInvoiceNo(req.body.userId, function (invoiceNo) {
       // if (req.body.price !== "" && req.body.price !== 0 && req.body.price !== null) {
@@ -140,35 +141,6 @@ router.post('/updatePurchase', function (req, res) {
         }
 
       });
-      // } else {
-      //   getConfigPrice(req, function (price) {
-      //     insertPurchase(req, invoiceNo, price, function (insertedData) {
-      //       if (insertedData) {
-      //         if (insertedData.affectedRows > 0) {
-      //           var resp = ({
-      //             error: false,
-      //             message: 'success.'
-      //           });
-      //           res.json(resp);
-      //         } else {
-      //           var resp = ({
-      //             error: false,
-      //             message: 'not insert.'
-      //           });
-      //           res.json(resp);
-      //         }
-      //       } else {
-      //         var resp = ({
-      //           error: false,
-      //           message: 'not insert.'
-      //         });
-      //         res.json(resp);
-      //       }
-
-      //     })
-      //   })
-      // }
-
     });
   }
 });
@@ -349,7 +321,7 @@ router.get('/allPurchases/:userId/:parent_id/:sort/:column/:limit/:offset/:searc
 })
 
 // report accounts
-router.get('/getPurchaseReportAccount/:userId/:parent_id/:accountId/:startDate/:endDate/:groupBy/:sortDirection/:column/:pageSize/:offset', function (req, res) {
+router.get('/getPurchaseReportAccount/:userId/:parent_id/:accountId/:startDate/:endDate/:groupBy/:searchTime/:sortDirection/:column/:pageSize/:offset', function (req, res) {
   var dateFormat = 'DATE_FORMAT(purchase.date, "%Y-%m-%d")';
   var selectDte = 'purchase.date as date';
   switch (req.params.groupBy) {
@@ -391,10 +363,15 @@ router.get('/getPurchaseReportAccount/:userId/:parent_id/:accountId/:startDate/:
     where3 = " AND purchase.account_id= '" + req.params.accountId + "'";
   }
 
+  var where4 = '';
+  if (req.params.searchTime != '0' && req.params.searchTime != 'All') {
+    where4 = " AND purchase.time_type= '" + req.params.searchTime + "' ";
+  }
+
   var select = selectDte + ", sum(purchase.quantity) as total_quantity, sum(purchase.total_price) as total_price,purchase.id, account.name, account.phone, account.avatar";
   var limitOffset = " LIMIT " + req.params.pageSize + " OFFSET " + req.params.offset;
-  let querieCount = "SELECT " + select + " FROM purchase LEFT JOIN account ON purchase.account_id = account.id " + where + where2 + where3 + " Group By " + dateFormat + ", purchase.account_id";
-  let querieData = "SELECT " + select + " FROM purchase LEFT JOIN account ON purchase.account_id = account.id " + where + where2 + where3 + " Group By " + dateFormat + ", purchase.account_id " + orderBycolumn + " " + limitOffset + "";
+  let querieCount = "SELECT " + select + " FROM purchase LEFT JOIN account ON purchase.account_id = account.id " + where + where2 + where3 + where4 + " Group By " + dateFormat + ", purchase.account_id";
+  let querieData = "SELECT " + select + " FROM purchase LEFT JOIN account ON purchase.account_id = account.id " + where + where2 + where3 + where4 + " Group By " + dateFormat + ", purchase.account_id " + orderBycolumn + " " + limitOffset + "";
   // console.log(querieData);
   // console.log(querieCount);
   getPurchaseReportAccountCount(querieCount, function (count) {
@@ -452,7 +429,7 @@ router.get('/getPurchaseReportAccount/:userId/:parent_id/:accountId/:startDate/:
 })
 
 // report daily basis
-router.get('/getPurchaseReportAccountDaily/:userId/:parent_id/:startDate/:sortDirection/:column/:pageSize/:offset', function (req, res) {
+router.get('/getPurchaseReportAccountDaily/:userId/:parent_id/:startDate/:searchTime/:sortDirection/:column/:pageSize/:offset', function (req, res) {
   var orderBycolumn = "";
   if (req.params.sortDirection != 'null') {
     switch (req.params.column) {
@@ -471,10 +448,13 @@ router.get('/getPurchaseReportAccountDaily/:userId/:parent_id/:startDate/:sortDi
     where = "WHERE account.active = 'true'";
 
   }
+  var where1 = '';
+  if (req.params.searchTime != '0' && req.params.searchTime != 'All') {
+    where1 = " AND purchase.time_type= '" + req.params.searchTime + "' ";
+  }
 
-
-  let querieCount = "SELECT DATE_FORMAT(purchase.date, '%Y-%m-%d') as date,  sum(purchase.quantity) as total_quantity, sum(purchase.total_price) as total_price, account.name, account.phone, account.avatar FROM account LEFT JOIN purchase ON account.id = purchase.account_id  AND purchase.date = '" + req.params.startDate + "' " + where + " Group By account.id";
-  let querieData = "SELECT DATE_FORMAT(purchase.date, '%Y-%m-%d') as date,  sum(purchase.quantity) as total_quantity, sum(purchase.total_price) as total_price, account.name, account.phone, account.avatar FROM account LEFT JOIN purchase ON account.id = purchase.account_id  AND purchase.date = '" + req.params.startDate + "' " + where + " Group By account.id " + orderBycolumn + " " + " LIMIT " + req.params.pageSize + " OFFSET " + req.params.offset + "";
+  let querieCount = "SELECT DATE_FORMAT(purchase.date, '%Y-%m-%d') as date,  sum(purchase.quantity) as total_quantity, sum(purchase.total_price) as total_price, account.name, account.phone, account.avatar FROM account LEFT JOIN purchase ON account.id = purchase.account_id  AND purchase.date = '" + req.params.startDate + "' " + where1 + where + " Group By account.id";
+  let querieData = "SELECT DATE_FORMAT(purchase.date, '%Y-%m-%d') as date,  sum(purchase.quantity) as total_quantity, sum(purchase.total_price) as total_price, account.name, account.phone, account.avatar FROM account LEFT JOIN purchase ON account.id = purchase.account_id  AND purchase.date = '" + req.params.startDate + "' " + where1 + where + " Group By account.id " + orderBycolumn + " " + " LIMIT " + req.params.pageSize + " OFFSET " + req.params.offset + "";
   // console.log(querieData);
   // console.log(querieData);
   getPurchaseReportAccountCount(querieCount, function (count) {
@@ -531,7 +511,7 @@ router.get('/getPurchaseReportAccountDaily/:userId/:parent_id/:startDate/:sortDi
 
 })
 // report admin wise
-router.get('/getPurchaseReportAdmin/:userId/:adminId/:startDate/:endDate/:groupBy/:sortDirection/:column/:pageSize/:offset', function (req, res) {
+router.get('/getPurchaseReportAdmin/:userId/:adminId/:startDate/:endDate/:groupBy/:searchTime/:sortDirection/:column/:pageSize/:offset', function (req, res) {
 
   var dateFormat = 'DATE_FORMAT(purchase.date, "%Y-%m-%d")';
   var selectDte = 'purchase.date as date';
@@ -568,11 +548,14 @@ router.get('/getPurchaseReportAdmin/:userId/:adminId/:startDate/:endDate/:groupB
   if (req.params.adminId != '0' && req.params.adminId != 'All') {
     where3 = " AND purchase.userId= '" + req.params.adminId + "'";
   }
-
+  var where4 = '';
+  if (req.params.searchTime != '0' && req.params.searchTime != 'All') {
+    where4 = " AND purchase.time_type= '" + req.params.searchTime + "'";
+  }
   var select = selectDte + ", sum(purchase.quantity) as total_quantity, sum(purchase.total_price) as total_price, admin.name, admin.phone, admin.avatar";
   var limitOffset = " LIMIT " + req.params.pageSize + " OFFSET " + req.params.offset;
-  let querieCount = "SELECT " + select + " FROM purchase LEFT JOIN admin ON purchase.userId = admin.id " + where + where2 + where3 + " Group By " + dateFormat + ", purchase.userId";
-  let querieData = "SELECT " + select + " FROM purchase LEFT JOIN admin ON purchase.userId = admin.id " + where + where2 + where3 + " Group By " + dateFormat + ", purchase.userId " + orderBycolumn + " " + limitOffset + "";
+  let querieCount = "SELECT " + select + " FROM purchase LEFT JOIN admin ON purchase.userId = admin.id " + where + where2 + where3 + where4 + " Group By " + dateFormat + ", purchase.userId";
+  let querieData = "SELECT " + select + " FROM purchase LEFT JOIN admin ON purchase.userId = admin.id " + where + where2 + where3 + where4 + " Group By " + dateFormat + ", purchase.userId " + orderBycolumn + " " + limitOffset + "";
   // console.log(querieData);
   // console.log(querieCount);
   getPurchaseReportAccountCount(querieCount, function (count) {
