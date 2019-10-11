@@ -61,7 +61,7 @@ const insertPurchase1 = (req, invouceNo, price, account_id, callback) => {
   } else {
     parent_id = req.body.userId;
   }
-  let insertData = 'INSERT INTO purchase (parent_id, userId, account_id, item_type, price, quantity, location, total_price, invoice_no, date, created_at) VALUES (' + parent_id + ', ' + req.body.userId + ',  ' + account_id + ', "Cow", ' + price + ',  ' + req.body.quantity + ',"' + req.body.location + '", ' + price * req.body.quantity + ',  "' + invouceNo + '", "' + req.body.date + '",  "' + Helper.yyyymmdd() + '")';
+  let insertData = 'INSERT INTO purchase (parent_id, userId, account_id, item_type, time_type, price, quantity, location, total_price, invoice_no, date, created_at) VALUES (' + parent_id + ', ' + req.body.userId + ',  ' + account_id + ', "Cow", "' + req.body.time_type + '", ' + price + ',  ' + req.body.quantity + ', "' + req.body.location + '", ' + price * req.body.quantity + ',  "' + invouceNo + '", "' + req.body.date + '",  "' + Helper.yyyymmdd() + '")';
   connection.query(insertData, function (error, insertedResponse) {
     return callback(insertedResponse);
   });
@@ -742,7 +742,7 @@ router.post('/addPurchaseApi', function (req, res) {
 
 router.post('/updatePurchaseApi', function (req, res) {
   // update Purchase
-  let querie = "UPDATE purchase set account_id='" + req.body.account_id + "',quantity='" + req.body.quantity + "',total_price='" + req.body.price * req.body.quantity + "',date='" + req.body.date + "', updated_at='" + Helper.yyyymmdd() + "'    where id = " + req.body.id + "";
+  let querie = "UPDATE purchase set account_id='" + req.body.account_id + "', time_type='" + req.body.time_type + "',quantity='" + req.body.quantity + "',total_price='" + req.body.price * req.body.quantity + "',date='" + req.body.date + "', updated_at='" + Helper.yyyymmdd() + "'    where id = " + req.body.id + "";
   connection.query(querie, function (error, upres) {
     if (upres) {
       if (upres.affectedRows > 0) {
@@ -766,7 +766,7 @@ router.post('/updatePurchaseApi', function (req, res) {
 });
 
 // report daily basis api
-router.get('/getPurchaseReportAccountDailyApi/:userId/:parent_id/:date', function (req, res) {
+router.get('/getPurchaseReportAccountDailyApi/:userId/:parent_id/:date/:searchTime', function (req, res) {
   var where = "";
   if (req.params.parent_id != 0) {
     where = "WHERE account.parent_id = " + req.params.userId + " And account.active = 'true'";
@@ -774,8 +774,12 @@ router.get('/getPurchaseReportAccountDailyApi/:userId/:parent_id/:date', functio
     where = "WHERE account.active = 'true'";
 
   }
+  var where1 = '';
+  if (req.params.searchTime != '0' && req.params.searchTime != 'All') {
+    where1 = " AND purchase.time_type= '" + req.params.searchTime + "' ";
+  }
 
-  let querieData = "SELECT account.name, account.phone,account.avatar, DATE_FORMAT(purchase.date, '%Y-%m-%d') as date,  sum(purchase.quantity) as quantity, sum(purchase.total_price) as total_price FROM account LEFT JOIN purchase ON account.id = purchase.account_id  AND purchase.date = '" + req.params.date + "' " + where + " Group By account.id ORDER BY purchase.date DESC";
+  let querieData = "SELECT account.name, account.phone,account.avatar, DATE_FORMAT(purchase.date, '%Y-%m-%d') as date,  sum(purchase.quantity) as quantity, sum(purchase.total_price) as total_price FROM account LEFT JOIN purchase ON account.id = purchase.account_id  AND purchase.date = '" + req.params.date + "' " + where1 + where + " Group By account.id ORDER BY purchase.date DESC";
   connection.query(querieData, function (error, purchase) {
     if (purchase) {
       if (purchase.length > 0) {
